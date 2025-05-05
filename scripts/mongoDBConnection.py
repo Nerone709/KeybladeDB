@@ -2,12 +2,12 @@ from pymongo import MongoClient
 import pandas as pd
 
 # Percorso del file CSV (modifica se necessario)
-file_path = "../dataset/videogames_sales.csv"
+file_path = "../datasets/videogames_sales2016.csv"
 
-# Caricamento del dataset con Pandas
+# Caricamento del datasets con Pandas
 df = pd.read_csv(file_path)
 
-# Pulizia del dataset
+# Pulizia del datasets
 if 'Rating' in df.columns:
     df['Rating'] = df['Rating'].fillna('RP')
 
