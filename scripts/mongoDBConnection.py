@@ -1,79 +1,80 @@
-from pymongo import MongoClient
 import pandas as pd
+from pymongo import MongoClient, errors
 
-# Percorsi dei file CSV
-file_path_2016 = "../datasets/videogames_sales2016.csv"
-file_path_2024 = "../datasets/videogames_sales2024.csv"
+# These are the paths for the datasets
+file_paths = {
+    "videogames_2016": "../datasets/videogames_sales2016.csv",
+    "videogames_2024": "../datasets/videogames_sales2024.csv"
+}
 
-# Funzione per il caricamento e la pulizia del dataset videogames_sales2016.csv
+def fill_missing_values(df, default_str="Unknown", default_num=0.0):
+    """Substitute NaN values with default ones (Unknown for string types, 0.0 for number one)s"""
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            df[col] = df[col].fillna(default_str)
+        else:
+            df[col] = df[col].fillna(default_num)
+    return df
+
+# Function to load and clean the 2016 dataset
 def load_and_clean_csv_2016(file_path):
     df = pd.read_csv(file_path)
 
-    # Cambiamento di Rating null in RP
-    if 'Rating' in df.columns:
-        df['Rating'] = df['Rating'].fillna('RP')
+    df['Rating'] = df.get('Rating', pd.Series()).fillna('RP')
+    df['User_Score'] = pd.to_numeric(df.get('User_Score', pd.Series()), errors='coerce')
 
-    # Conversione User_Score da stringa a numero
-    df['User_Score'] = pd.to_numeric(df['User_Score'], errors='coerce')
-    columns_to_update = ['Critic_Score', 'Critic_Count', 'User_Score', 'User_Count']
+    # Valori numerici da sostituire con 0.0 se NaN
+    for col in ['Critic_Score', 'Critic_Count', 'User_Score', 'User_Count']:
+        df[col] = df.get(col, pd.Series()).fillna(0.0)
 
-    # Sostituzione dei valori NaN con 0.0 per le colonne specificate
-    for column in columns_to_update:
-        if column in df.columns:
-            df[column] = df[column].fillna(0.0)
-
-    # Eliminazione dei giochi senza nome
-    if 'Name' in df.columns:
-        df = df.dropna(subset=['Name'])
-
-    # Conversione dei valori NaN in Unknown
-    df['Publisher'] = df['Publisher'].fillna("Unknown")
-    df['Developer'] = df['Developer'].fillna("Unknown")
-    df['Year_of_Release'] = df['Year_of_Release'].fillna("Unknown")
-
+    df = df.dropna(subset=['Name'])
+    df = fill_missing_values(df)
     return df
 
-# Funzione per il caricamento e la pulizia del dataset videogames_sales2024.csv
+# Function to load and clean the 2024 dataset
 def load_and_clean_csv_2024(file_path):
     df = pd.read_csv(file_path)
+    df = fill_missing_values(df)
 
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            df[col] = df[col].fillna('Unknown')
-        else:
-            df[col] = df[col].fillna(0.0)
+    for date_col in ['release_date', 'last_update']:
+        if date_col in df.columns:
+            mask = df[date_col] != 'Unknown'
+            df.loc[mask, date_col] = pd.to_datetime(df.loc[mask, date_col], errors='coerce').dt.year.astype('Int64')
 
-    # Conversione dei valori Data di rilascio e last_update in formato data (YYYY)
-    df.loc[df['release_date'] != 'Unknown', 'release_date'] = pd.to_datetime(
-        df.loc[df['release_date'] != 'Unknown', 'release_date'], errors='coerce'
-    ).dt.year.astype('Int64')
-
-    # Conversione di last_update come la colonne release_date
-    df.loc[df['last_update'] != 'Unknown', 'last_update'] = pd.to_datetime(
-        df.loc[df['last_update'] != 'Unknown', 'last_update'], errors='coerce'
-    ).dt.year.astype('Int64')
-
-    df.drop('img', axis=1, inplace=True)
+    df.drop(columns=['img'], errors='ignore', inplace=True)
     return df
 
-# Effettuo la pulizia dei due csv richiamando i metodi
-df_2016 = load_and_clean_csv_2016(file_path_2016)
-df_2024 = load_and_clean_csv_2024(file_path_2024)
+# Function to insert data into MongoDB
+def insert_into_mongodb(collection_name, data, db):
+    """Insert datas into mongodb (with error handling)."""
+    if not data:
+        print(f"Nessun dato da inserire per {collection_name}.")
+        return
 
-# Connessione a MongoDB locale
-client = MongoClient("mongodb://localhost:27017/")
-db = client["Keyblade"]  # Nome del database
+    try:
+        collection = db[collection_name]
+        result = collection.insert_many(data)
+        print(f"Inseriti {len(result.inserted_ids)} documenti nella collezione '{collection_name}'.")
+    except errors.BulkWriteError as bwe:
+        print(f"Errore di scrittura in blocco: {bwe.details}")
+    except Exception as e:
+        print(f"Errore durante l'inserimento in MongoDB: {e}")
 
-# Inserimento dei dati del dataset 2016
-collection_2016 = db["videogames_2016"]
-dati_2016 = df_2016.to_dict(orient='records')
-if dati_2016:
-    result_2016 = collection_2016.insert_many(dati_2016)
-    print(f"Inseriti {len(result_2016.inserted_ids)} documenti nella collezione 'videogames_2016'.")
+def main():
+    try:
+        with MongoClient("mongodb://localhost:27017/") as client:
+            db = client["Keyblade"]
 
-# Inserimento dei dati del dataset 2024
-collection_2024 = db["videogames_2024"]
-dati_2024 = df_2024.to_dict(orient='records')
-if dati_2024:
-    result_2024 = collection_2024.insert_many(dati_2024)
-    print(f"Inseriti {len(result_2024.inserted_ids)} documenti nella collezione 'videogames_2024'.")
+            # Dataset 2016
+            df_2016 = load_and_clean_csv_2016(file_paths["videogames_2016"])
+            insert_into_mongodb("videogames_2016", df_2016.to_dict(orient='records'), db)
+
+            # Dataset 2024
+            df_2024 = load_and_clean_csv_2024(file_paths["videogames_2024"])
+            insert_into_mongodb("videogames_2024", df_2024.to_dict(orient='records'), db)
+
+    except errors.ConnectionFailure as cf:
+        print("Connessione a MongoDB fallita:", cf)
+
+if __name__ == "__main__":
+    main()
