@@ -12,7 +12,7 @@ import os
 from PIL import Image
 import numpy as np
 from IPython.display import display
-
+from pandas import DataFrame
 
 # # Caricamento del dataset
 
@@ -23,10 +23,10 @@ from IPython.display import display
 file_path = '../datasets/videogames_sales2016.csv'
 
 # Caricamento del datasets
-df = pd.read_csv(file_path)
+df_2016: DataFrame = pd.read_csv(file_path)
 
 # Mostra l'intero datasets
-display(df)
+display(df_2016)
 
 
 # # Stampa dei giochi le cui features Publisher e Developer presentano valori diversi
@@ -35,7 +35,7 @@ display(df)
 
 
 # Filtra i giochi con valori diversi tra Publisher e Developer
-giochi_valori_diversi = df[df['Publisher'] != df['Developer']]
+giochi_valori_diversi = df_2016[df_2016['Publisher'] != df_2016['Developer']]
 
 # Stampa dei giochi filtrati
 print("Giochi con valori diversi tra Publisher e Developer:")
@@ -53,27 +53,27 @@ display(giochi_valori_diversi)
 
 
 # Pulizia del datasets
-if 'Rating' in df.columns:
-    df['Rating'] = df['Rating'].fillna('RP')
+if 'Rating' in df_2016.columns:
+    df_2016['Rating'] = df_2016['Rating'].fillna('RP')
 
 # Conversione della colonna User_Score in formato numerico
-df['User_Score'] = pd.to_numeric(df['User_Score'], errors='coerce')
+df_2016['User_Score'] = pd.to_numeric(df_2016['User_Score'], errors='coerce')
 
 # Verifica se ci sono valori NaN dopo la conversione
-nan_count = df['User_Score'].isnull().sum()
+nan_count = df_2016['User_Score'].isnull().sum()
 print(f"Numero di valori NaN in 'User_Score' dopo la conversione: {nan_count}")
 
 columns_to_update = ['Critic_Score', 'Critic_Count', 'User_Score', 'User_Count']
 for column in columns_to_update:
-    if column in df.columns:
-        df[column] = df[column].fillna(0.0)
+    if column in df_2016.columns:
+        df_2016[column] = df_2016[column].fillna(0.0)
 
 # Rimozione delle righe senza nome del gioco
-if 'Name' in df.columns:
-    df = df.dropna(subset=['Name'])
+if 'Name' in df_2016.columns:
+    df_2016 = df_2016.dropna(subset=['Name'])
 
 # Stampa delle colonne con valori NaN
-columns_with_nan = df.columns[df.isnull().any()]
+columns_with_nan = df_2016.columns[df_2016.isnull().any()]
 if not columns_with_nan.empty:
     print("Colonne con valori NaN:", list(columns_with_nan))
 else:
@@ -82,8 +82,8 @@ else:
 # Calcolo e stampa dei valori NaN per colonne specifiche
 columns_to_check = ['Years_of_Release', 'Publisher', 'Developer']
 for column in columns_to_check:
-    if column in df.columns:
-        nan_count = df[column].isnull().sum()
+    if column in df_2016.columns:
+        nan_count = df_2016[column].isnull().sum()
         print(f"Numero di valori NaN in '{column}': {nan_count}")
 
 
@@ -93,11 +93,11 @@ for column in columns_to_check:
 
 
 # Numero totale di giochi
-numero_giochi = len(df)
+numero_giochi = len(df_2016)
 print(f"Numero totale di giochi: {numero_giochi}")
 
 # Giochi in cui 'Years_of_Release' non è definito
-giochi_senza_anno = df[df['Year_of_Release'].isnull()]
+giochi_senza_anno = df_2016[df_2016['Year_of_Release'].isnull()]
 numero_giochi_senza_anno = len(giochi_senza_anno)
 print(f"Numero di giochi senza 'Year_of_Release': {numero_giochi_senza_anno}")
 
@@ -106,10 +106,10 @@ print("Giochi senza 'Year_of_Release':")
 display(giochi_senza_anno)
 
 # Sostituisci i valori NaN nella colonna Year_of_Release con "Unknown"
-df['Year_of_Release'] = df['Year_of_Release'].fillna("Unknown")
+df_2016['Year_of_Release'] = df_2016['Year_of_Release'].fillna("Unknown")
 
 # Verifica se ci sono ancora valori NaN nella colonna Year_of_Release
-nan_count = df['Year_of_Release'].isnull().sum()
+nan_count = df_2016['Year_of_Release'].isnull().sum()
 print(f"Numero di valori NaN in 'Year_of_Release' dopo la sostituzione: {nan_count}")
 
 
@@ -119,18 +119,18 @@ print(f"Numero di valori NaN in 'Year_of_Release' dopo la sostituzione: {nan_cou
 
 
 # Sostituisci i valori NaN con "Unknown" nella colonna Publisher
-df['Publisher'] = df['Publisher'].fillna("Unknown")
+df_2016['Publisher'] = df_2016['Publisher'].fillna("Unknown")
 
 # Sostituisci i valori NaN con "Unknown" nella colonna Developer
-df['Developer'] = df['Developer'].fillna("Unknown")
+df_2016['Developer'] = df_2016['Developer'].fillna("Unknown")
 
 # Verifica se ci sono ancora giochi con Publisher uguale a NaN
-giochi_nan_publisher = df[df['Publisher'].isnull()]
+giochi_nan_publisher = df_2016[df_2016['Publisher'].isnull()]
 print(f"Numero di giochi con Publisher uguale a NaN: {len(giochi_nan_publisher)}")
 
 
 # Conta il numero di giochi con valori NaN nella colonna Developer
-nan_count_developer = df['Developer'].isnull().sum()
+nan_count_developer = df_2016['Developer'].isnull().sum()
 
 # Stampa il risultato
 print(f"Numero di giochi con Developer uguale a NaN: {nan_count_developer}")
@@ -149,7 +149,7 @@ else:
 
 
 # Filtra i giochi con valori NaN sia in Publisher che in Developer
-giochi_nan_aggiornati = df[df['Publisher'].isnull() & df['Developer'].isnull()]
+giochi_nan_aggiornati = df_2016[df_2016['Publisher'].isnull() & df_2016['Developer'].isnull()]
 
 # Numero di giochi filtrati
 numero_giochi_nan_aggiornati = len(giochi_nan_aggiornati)
@@ -167,7 +167,7 @@ display(giochi_nan_aggiornati)
 
 # Stampa dell'intero datasets aggiornato
 print("Dataset aggiornato con tutte le modifiche:")
-display(df)
+display(df_2016)
 
 
 # # Controllo se sono presenti ancora colonne nel Dataset che presentano valori NaN
@@ -176,7 +176,7 @@ display(df)
 
 
 # Controlla le colonne con valori NaN
-columns_with_nan = df.columns[df.isnull().any()]
+columns_with_nan = df_2016.columns[df_2016.isnull().any()]
 
 # Stampa le colonne con valori NaN
 if not columns_with_nan.empty:
@@ -193,6 +193,6 @@ else:
 # Calcolo e stampa del valore massimo per ogni colonna
 columns_to_check = ['Critic_Score', 'Critic_Count', 'User_Score', 'User_Count']
 for column in columns_to_check:
-    max_value = df[column].max()
+    max_value = df_2016[column].max()
     print(f"Il valore massimo di {column} è: {max_value}")
 
