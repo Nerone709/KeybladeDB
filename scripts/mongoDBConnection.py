@@ -7,8 +7,15 @@ file_paths = {
     "videogames_2024": "../datasets/videogames_sales2024.csv"
 }
 
+
 def fill_missing_values(df, default_str="Unknown", default_num=0.0):
-    """Substitute NaN values with default ones (Unknown for string types, 0.0 for number one)s"""
+    """
+    Substitute NaN values with default ones (Unknown for string types, 0.0 for number one)s
+    :param df: Dataframe passed for filling the missing values
+    :param default_str: This is the default value used for NaN string values 
+    :param default_num: This is the default value used for NaN numbers 
+    :return: Dataframe with updated missing values 
+    """""
     for col in df.columns:
         if df[col].dtype == 'object':
             df[col] = df[col].fillna(default_str)
@@ -18,6 +25,10 @@ def fill_missing_values(df, default_str="Unknown", default_num=0.0):
 
 # Function to load and clean the 2016 dataset
 def load_and_clean_csv_2016(file_path):
+    """
+    :param file_path: path of the csv file (year: 2016)
+    :return: filtered csv (Substituted NaN values)
+    """""
     df = pd.read_csv(file_path)
 
     df['Rating'] = df.get('Rating', pd.Series()).fillna('RP')
@@ -33,6 +44,10 @@ def load_and_clean_csv_2016(file_path):
 
 # Function to load and clean the 2024 dataset
 def load_and_clean_csv_2024(file_path):
+    """"
+    :param file_path: path of the csv file (year: 2024)
+    :return: filtered csv (Substituted NaN values)
+    """
     df = pd.read_csv(file_path)
     df = fill_missing_values(df)
 
@@ -46,7 +61,13 @@ def load_and_clean_csv_2024(file_path):
 
 # Function to insert data into MongoDB
 def insert_into_mongodb(collection_name, data, db):
-    """Insert datas into mongodb (with error handling)."""
+    """
+    Insert datas into mongodb (with error handling).
+    :param collection_name: name of the collection
+    :param data: datas to be inserted
+    :param db: database name
+    :return: no return value
+    """
     if not data:
         print(f"Nessun dato da inserire per {collection_name}.")
         return
