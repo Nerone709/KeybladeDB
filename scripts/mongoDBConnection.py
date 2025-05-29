@@ -57,23 +57,35 @@ def load_and_clean_csv_2024(file_path):
             df.loc[mask, date_col] = pd.to_datetime(df.loc[mask, date_col], errors='coerce').dt.year.astype('Int64')
 
     df.drop(columns=['img'], errors='ignore', inplace=True)
+    # Find and print duplicates
+    duplicate_rows = df[df.duplicated()]
+    print(f"Found {len(duplicate_rows)} duplicate rows:")
+    if not duplicate_rows.empty:
+        print(duplicate_rows)
+
+    # Drop duplicates
+    df = df.drop_duplicates()
     return df
 
 # Function to insert data into MongoDB
 def insert_into_mongodb(collection_name, data, db):
     """
-    Insert datas into mongodb (with error handling).
+    Insert datas into MongoDB (with error handling).
     :param collection_name: name of the collection
     :param data: datas to be inserted
     :param db: database name
-    :return: no return value
+    :return: None
     """
-    if not data:
+    if data is None or len(data) == 0:
         print(f"Nessun dato da inserire per {collection_name}.")
         return
 
     try:
         collection = db[collection_name]
+
+        # ⚠️ PULISCI LA COLLEZIONE PRIMA DI INSERIRE
+        collection.delete_many({})  # Cancella tutti i documenti esistenti
+
         result = collection.insert_many(data)
         print(f"Inseriti {len(result.inserted_ids)} documenti nella collezione '{collection_name}'.")
     except errors.BulkWriteError as bwe:
