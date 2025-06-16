@@ -33,6 +33,13 @@ def load_and_clean_csv_2016(file_path):
 
     df['Rating'] = df.get('Rating', pd.Series()).fillna('RP')
     df['User_Score'] = pd.to_numeric(df.get('User_Score', pd.Series()), errors='coerce')
+    df.loc[df['Rating'] == 'K-A', 'Rating'] = 'E'
+
+    # Stampa solo i giochi aggiornati (ora con Rating 'E' e nome tra quelli aggiornati)
+    print("Giochi AGGIORNATI da 'K-A' a 'E':")
+    giochi_ka_prima = df[df['Rating'] == 'K-A']
+    nomi_giochi_ka = giochi_ka_prima['Name'].tolist()
+    giochi_aggiornati = df[(df['Rating'] == 'E') & (df['Name'].isin(nomi_giochi_ka))]
 
     # Valori numerici da sostituire con 0.0 se NaN
     for col in ['Critic_Score', 'Critic_Count', 'User_Score', 'User_Count']:
