@@ -1,120 +1,77 @@
 import pandas as pd
 from pymongo import MongoClient, errors
+import os
+import sys
 
-# These are the paths for the datasets
+# Ottieni il percorso assoluto della directory dello script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# MODIFICA: Percorso diretto alla cartella notebooks
+notebooks_dir = os.path.join(script_dir, "../notebooks")
+
+# Costruisci i percorsi assoluti per i file CSV
 file_paths = {
-    "videogames_2016": "../datasets/videogames_sales2016.csv",
-    "videogames_2024": "../datasets/videogames_sales2024.csv"
+    "videogames_2016": os.path.join(notebooks_dir, "videogames_2016"),
+    "videogames_2024": os.path.join(notebooks_dir, "videogames_2024")
 }
 
 
-def fill_missing_values(df, default_str="Unknown", default_num=0.0):
-    """
-    Substitute NaN values with default ones (Unknown for string types, 0.0 for number one)s
-    :param df: Dataframe passed for filling the missing values
-    :param default_str: This is the default value used for NaN string values 
-    :param default_num: This is the default value used for NaN numbers 
-    :return: Dataframe with updated missing values 
-    """""
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            df[col] = df[col].fillna(default_str)
-        else:
-            df[col] = df[col].fillna(default_num)
-    return df
-
-# Function to load and clean the 2016 dataset
-def load_and_clean_csv_2016(file_path):
-    """
-    :param file_path: path of the csv file (year: 2016)
-    :return: filtered csv (Substituted NaN values)
-    """""
-    df = pd.read_csv(file_path)
-
-    df['Rating'] = df.get('Rating', pd.Series()).fillna('RP')
-    df['User_Score'] = pd.to_numeric(df.get('User_Score', pd.Series()), errors='coerce')
-    df.loc[df['Rating'] == 'K-A', 'Rating'] = 'E'
-
-    # Stampa solo i giochi aggiornati (ora con Rating 'E' e nome tra quelli aggiornati)
-    print("Giochi AGGIORNATI da 'K-A' a 'E':")
-    giochi_ka_prima = df[df['Rating'] == 'K-A']
-    nomi_giochi_ka = giochi_ka_prima['Name'].tolist()
-    giochi_aggiornati = df[(df['Rating'] == 'E') & (df['Name'].isin(nomi_giochi_ka))]
-
-    # Valori numerici da sostituire con 0.0 se NaN
-    for col in ['Critic_Score', 'Critic_Count', 'User_Score', 'User_Count']:
-        df[col] = df.get(col, pd.Series()).fillna(0.0)
-
-    df = df.dropna(subset=['Name'])
-    df = fill_missing_values(df)
-    return df
-
-# Function to load and clean the 2024 dataset
-def load_and_clean_csv_2024(file_path):
-    """"
-    :param file_path: path of the csv file (year: 2024)
-    :return: filtered csv (Substituted NaN values)
-    """
-    df = pd.read_csv(file_path)
-    df = fill_missing_values(df)
-
-    for date_col in ['release_date', 'last_update']:
-        if date_col in df.columns:
-            mask = df[date_col] != 'Unknown'
-            df.loc[mask, date_col] = pd.to_datetime(df.loc[mask, date_col], errors='coerce').dt.year.astype('Int64')
-
-    df.drop(columns=['img'], errors='ignore', inplace=True)
-    # Find and print duplicates
-    duplicate_rows = df[df.duplicated()]
-    print(f"Found {len(duplicate_rows)} duplicate rows:")
-    if not duplicate_rows.empty:
-        print(duplicate_rows)
-
-    # Drop duplicates
-    df = df.drop_duplicates()
-    return df
-
-# Function to insert data into MongoDB
 def insert_into_mongodb(collection_name, data, db):
-    """
-    Insert datas into MongoDB (with error handling).
-    :param collection_name: name of the collection
-    :param data: datas to be inserted
-    :param db: database name
-    :return: None
-    """
     if data is None or len(data) == 0:
         print(f"Nessun dato da inserire per {collection_name}.")
         return
 
     try:
         collection = db[collection_name]
-
-        # ⚠️ PULISCI LA COLLEZIONE PRIMA DI INSERIRE
-        collection.delete_many({})  # Cancella tutti i documenti esistenti
-
+        collection.delete_many({})
         result = collection.insert_many(data)
-        print(f"Inseriti {len(result.inserted_ids)} documenti nella collezione '{collection_name}'.")
+        print(f"Inseriti {len(result.inserted_ids)} documenti in '{collection_name}'.")
     except errors.BulkWriteError as bwe:
         print(f"Errore di scrittura in blocco: {bwe.details}")
     except Exception as e:
         print(f"Errore durante l'inserimento in MongoDB: {e}")
 
+
 def main():
     try:
+        print(f"Cartella notebooks: {os.path.abspath(notebooks_dir)}")
+        print(f"Contenuto cartella notebooks: {os.listdir(os.path.abspath(notebooks_dir))}")
+
+        # Verifica esistenza file
+        missing_files = []
+        for name, path in file_paths.items():
+            abs_path = os.path.abspath(path)
+            if not os.path.exists(abs_path):
+                missing_files.append((name, abs_path))
+            else:
+                print(f"File {name} trovato: {abs_path}")
+
+        if missing_files:
+            print("\nERRORE: File mancanti!")
+            for name, path in missing_files:
+                print(f"- {name}: {path}")
+            print("\nAssicurati che:")
+            print("1. I file esistano in:", os.path.abspath(notebooks_dir))
+            print("2. I nomi corrispondano esattamente a:")
+            print("   - videogames_2016.csv")
+            print("   - videogames_2024.csv")
+            sys.exit(1)
+
         with MongoClient("mongodb://localhost:27017/") as client:
             db = client["Keyblade"]
 
-            # Dataset 2016
-            df_2016 = load_and_clean_csv_2016(file_paths["videogames_2016"])
+            # Caricamento dati
+            df_2016 = pd.read_csv(file_paths["videogames_2016"])
             insert_into_mongodb("videogames_2016", df_2016.to_dict(orient='records'), db)
 
-            # Dataset 2024
-            df_2024 = load_and_clean_csv_2024(file_paths["videogames_2024"])
+            df_2024 = pd.read_csv(file_paths["videogames_2024"])
             insert_into_mongodb("videogames_2024", df_2024.to_dict(orient='records'), db)
 
     except errors.ConnectionFailure as cf:
         print("Connessione a MongoDB fallita:", cf)
+    except Exception as e:
+        print(f"Errore imprevisto: {e}")
+
 
 if __name__ == "__main__":
     main()
