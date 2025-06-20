@@ -1,0 +1,67 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+
+body {
+  background-color: #121212;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.gaming-header {
+  background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+  border-bottom: 3px solid #ff4757;
+}
+
+.nav-link {
+  color: #f1f1f1 !important;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: #ff4757 !important;
+}
+
+/* Dropdown visibile su hover */
+.nav-item.dropdown:hover .dropdown-menu {
+  display: block;
+  margin-top: 0.3rem;
+}
+
+/* Facoltativo: transizione fluida */
+.dropdown-menu {
+  transition: all 0.2s ease-in-out;
+}
+
+.gaming-footer {
+  background: linear-gradient(to right, #2c5364, #203a43, #0f2027);
+  border-top: 3px solid #ff4757;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.gaming-footer a:hover {
+  color: #ff4757 !important;
+}
+
+
+.developer-checkboxes {
+  background-color: #222;
+  scrollbar-width: thin;
+  scrollbar-color: #ffc107 #444;
+}
+
+.developer-checkboxes::-webkit-scrollbar {
+  width: 6px;
+}
+
+.developer-checkboxes::-webkit-scrollbar-thumb {
+  background-color: #ffc107;
+  border-radius: 3px;
+}
