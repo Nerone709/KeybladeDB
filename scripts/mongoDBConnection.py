@@ -58,7 +58,7 @@ def main():
             sys.exit(1)
 
         with MongoClient("mongodb://localhost:27017/") as client:
-            db = client["Keyblade"]
+            db = client["KeybladeDB"]
 
             # Caricamento dati
             df_2016 = pd.read_csv(file_paths["videogames_2016"])
