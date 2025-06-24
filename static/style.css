@@ -1,32 +1,92 @@
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: url('assets/supermario.gif') no-repeat center center / contain; /* Cambia 'cover' a 'contain' qui */
+  opacity: 0.1;
+  z-index: -1000;
+  pointer-events: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: 150px;
+  opacity: 0.1;
+  z-index: -1000;
+  pointer-events: none;
+}
+
+
+/* ===== STRUTTURA BASE ===== */
 html, body {
   height: 100%;
   margin: 0;
-  display: flex;
   flex-direction: column;
+  display: flex;
+  font-family: 'Orbitron', sans-serif;
+  color: #f8f9fa;
 }
 
 main {
   flex: 1;
 }
 
-
-body {
-  background-color: #121212;
-  font-family: 'Orbitron', sans-serif;
+/* ===== HEADER ===== */
+.gaming-header {
+  background: linear-gradient(to right, #4B0082, #007BFF);
+  border-bottom: 3px solid #4B0082;
+  position: relative;
+  z-index: 3;
 }
 
-.gaming-header {
-  background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-  border-bottom: 3px solid #ff4757;
+.navbar-brand {
+  font-size: 1.8rem;
+  letter-spacing: 1.5px;
+  display: flex;
+  align-items: center;
+}
+
+
+.fullscreen-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.fullscreen-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+.navbar-brand img {
+  transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+  transform: rotate(5deg) scale(1.1);
 }
 
 .nav-link {
-  color: #f1f1f1 !important;
+  color: #f8f9fa !important;
   transition: color 0.3s;
 }
 
 .nav-link:hover {
-  color: #ff4757 !important;
+  color: #7b68ee !important;
 }
 
 /* Dropdown visibile su hover */
@@ -35,26 +95,94 @@ body {
   margin-top: 0.3rem;
 }
 
-/* Facoltativo: transizione fluida */
+/* Dropdown transition */
 .dropdown-menu {
   transition: all 0.2s ease-in-out;
+  background-color: #1a1a1a;
+  border: 1px solid #4B0082;
 }
 
+.dropdown-item {
+  color: #f8f9fa;
+}
+
+.dropdown-item:hover {
+  background-color: #4B0082;
+  color: white;
+}
+
+/* ===== SEZIONI PRINCIPALI ===== */
+.section {
+  position: relative;
+  padding: 3rem 2rem;
+  background: linear-gradient(to bottom right, #1a1a1a, #121212);
+  border-top: 2px solid #4B0082;
+  border-bottom: 2px solid #007BFF;
+  margin-bottom: 2rem;
+  z-index: 2;
+}
+
+/* Rimuovi lo sfondo precedente delle sezioni */
+.section::before {
+  content: none !important;
+}
+
+/* ===== FOOTER ===== */
+.fullscreen-bg {
+  position: fixed; /* Deve essere fixed */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh; /* Deve essere 100vh */
+  z-index: -1;
+  overflow: hidden;
+}
+
+
+.fullscreen-bg img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Footer styling */
 .gaming-footer {
-  background: linear-gradient(to right, #2c5364, #203a43, #0f2027);
-  border-top: 3px solid #ff4757;
+  padding-top: 0.0rem; /* Riduci questo valore */
+  padding-bottom: 0.0rem; /* Riduci questo valore */
+  font-size: 0.8rem;
+}
+
+
+.gaming-footer {
+  padding-top: 0.0rem; /* Cambia questo valore */
+  padding-bottom: 0.0rem; /* Cambia questo valore */
+  font-size: 0.8rem;
+  background: linear-gradient(to right, #007BFF, #4B0082);
   font-family: 'Orbitron', sans-serif;
+  position: relative;
+  z-index: 3;
+}
+
+
+.gaming-footer a {
+  color: #f8f9fa;
+  text-decoration: none;
 }
 
 .gaming-footer a:hover {
-  color: #ff4757 !important;
+  color: #7b68ee !important;
 }
 
-
+/* ===== CHECKBOXES SVILUPPATORI ===== */
 .developer-checkboxes {
-  background-color: #222;
+  background-color: #1a1a1a;
   scrollbar-width: thin;
-  scrollbar-color: #ffc107 #444;
+  scrollbar-color: #6f42c1 #444;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid #4B0082;
 }
 
 .developer-checkboxes::-webkit-scrollbar {
@@ -62,6 +190,34 @@ body {
 }
 
 .developer-checkboxes::-webkit-scrollbar-thumb {
-  background-color: #ffc107;
+  background-color: #6f42c1;
   border-radius: 3px;
+}
+
+/* ===== COMPONENTI AGGIUNTIVI ===== */
+.game-card {
+  background: linear-gradient(to bottom right, #1e1e1e, #2d2d2d);
+  border: 1px solid #4B0082;
+  border-radius: 8px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(75, 0, 130, 0.5);
+}
+
+.btn-gaming {
+  background: linear-gradient(to right, #4B0082, #007BFF);
+  border: none;
+  color: white;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.btn-gaming:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(123, 104, 238, 0.8);
 }

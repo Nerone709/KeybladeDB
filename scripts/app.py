@@ -11,7 +11,7 @@ static_dir = os.path.join(BASE_DIR, "static")
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 print('Connessione al database in corso…')
 client = pymongo.MongoClient('mongodb://localhost:27017/')
-db = client['Keyblade']
+db = client['KeybladeDB']
 
 videogames2016 = db['videogames_2016']
 videogames2024 = db['videogames_2024']
