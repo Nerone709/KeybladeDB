@@ -28,6 +28,7 @@ def get_videogames_by_rating(rating, collection: Collection):
     ]
     return collection.aggregate(pipeline)
 
+
 def get_sales_by_developer2024(collection: Collection, developers):
     """"
     Retrieve total global sales for a specific developer.
@@ -46,11 +47,10 @@ def get_sales_by_developer2024(collection: Collection, developers):
             "console": 1,
             "total_sales": 1
         }},
-        {"$sort": {"total_sales": -1}}, # Sort by Global_Sales in descending order
+        {"$sort": {"total_sales": -1}},  # Sort by Global_Sales in descending order
     ]
 
     return collection.aggregate(pipeline)
-
 
 
 def get_sales_by_developer2016(collection: Collection, developers):
@@ -71,35 +71,64 @@ def get_sales_by_developer2016(collection: Collection, developers):
             "Platform": 1,
             "Global_Sales": 1
         }},
-        {"$sort": {"Global_Sales": -1}}, # Sort by Global_Sales in descending order
+        {"$sort": {"Global_Sales": -1}},  # Sort by Global_Sales in descending order
     ]
 
     return collection.aggregate(pipeline)
 
 
-def get_sales_by_genre(collection: Collection, genre):
+def get_sales_by_genre(collection: Collection, dataset_name: str, genre):
     """"
     Retrieve total global sales for a specific genre.
-    :param collection: The MongoDB collection for the year 2024.
+    :param collection: The MongoDB collection.
+    :param dataset_name: The name of the dataset (e.g. '2024', '2016').
     :param genre: The genre to filter by (e.g. 'Action', 'Adventure').
     :return: A list of dictionaries containing the name, genre, platform, and global sales of the video games.
     """
+
+    field_map = {
+        "2024": {
+            "title": "title",
+            "console": "console",
+            "release_date": "release_date",
+            "genre": "genre",
+            "publisher": "publisher",
+            "img": "img",
+            "total_sales": "total_sales"
+        },
+        "2016": {
+            "title": "Name",
+            "console": "Platform",
+            "release_date": "Year_of_Realese",
+            "genre": "Genre",
+            "publisher": "Publisher",
+            "img": "img",
+            "total_sales": "Global_Sales"
+        }
+    }
+
+    fields = field_map[dataset_name]
+
     pipeline = [
-        {"$match": {"Genre": genre}},
+        {"$match": {fields["genre"]: genre}},
         {"$project": {
             "_id": 0,
-            "Name": 1,
-            "Platform": 1,
-            "Year_of_Release": 1,
-            "Genre": 1,
-            "Publisher": 1,
-            "Global_Sales": 1
+            "title": f"${fields['title']}",
+            "img": f"${fields['img']}",
+            "console": f"${fields['console']}",
+            "release_date": f"${fields['release_date']}",
+            "genre": f"${fields['genre']}",
+            "publisher": f"${fields['publisher']}",
+            "total_sales": f"${fields['total_sales']}"
         }},
-        {"$sort": {"Global_Sales": -1}} # Sort by Global_Sales in descending order
+        {"$sort": {
+            "total_sales": -1
+        }}  # Sort by Global_Sales in descending order
     ]
 
     result = list(collection.aggregate(pipeline))
     return result
+
 
 def get_num_videogames_by_publisher(collection: Collection, publisher, year):
     """
@@ -116,9 +145,9 @@ def get_num_videogames_by_publisher(collection: Collection, publisher, year):
                     "$regex": publisher,  # Match publisher name or part of it
                     "$options": "i"  # Case-insensitive match
                 },
-            "release_date": {
-                "$gte" : year
-            }
+                "release_date": {
+                    "$gte": year
+                }
             }
         },
         {
@@ -134,7 +163,6 @@ def get_num_videogames_by_publisher(collection: Collection, publisher, year):
         }
     ]
     return collection.aggregate(pipeline)
-
 
 
 def get_publisher_range(publisher_name, start_year, end_year, dataset_version: Collection, dataset_name: str):
@@ -193,10 +221,6 @@ def get_publisher_range(publisher_name, start_year, end_year, dataset_version: C
     return list(dataset_version.aggregate(pipeline))
 
 
-
-
-
-
 def get_all_ratings(collection: Collection):
     """
     Retrieve the list of unique ratings from the MongoDB collection.
@@ -214,6 +238,7 @@ def get_all_developer2024(collection: Collection):
     """
     return sorted(collection.distinct("developer"))
 
+
 def get_all_developer2016(collection: Collection):
     """
     Retrieve the list of unique ratings from the MongoDB collection.
@@ -221,3 +246,12 @@ def get_all_developer2016(collection: Collection):
     :return: A sorted list of unique ratings.
     """
     return sorted(collection.distinct("Developer"))
+
+
+def get_all_genres(collection: Collection):
+    """
+    Retrieve the list of unique genres from the MongoDB collection.
+    :param collection: the MongoDB collection to query.
+    :return: A sorted list of unique genres.
+    """
+    return sorted(collection.distinct("genre"))

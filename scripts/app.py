@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request,Response
 import os
 import pymongo
-import queries
+import json
+from pygments.lexer import combined
 
+import queries
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 template_dir = os.path.join(BASE_DIR, "template")
@@ -20,6 +22,31 @@ print("Connesso. Avvio dell'app in corso…")
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/genere', methods=['GET', 'POST'])
+def genre():
+    genre_list = queries.get_all_genres(videogames2024)
+    if genre_list is None:
+        return Response("Errore: Impossibile recuperare la lista dei generi.", status=500)
+
+    selected_genre = None
+    combined_results = []
+    if request.method == 'POST':
+        selected_genre = request.form.get('selected_genre')
+        results_2024 = queries.get_sales_by_genre(videogames2024, "2024", selected_genre)
+        results_2016 = queries.get_sales_by_genre(videogames2016, "2016", selected_genre)
+
+        seen = set()
+        for game in results_2016 + results_2024:
+            key = (game["title"].lower(), game["console"].lower())
+            if key not in seen:
+                seen.add(key)
+                combined_results.append(game)
+                combined_results.sort(key=lambda g: not bool(g.get("img")))
+
+        return render_template('genere.html', risultati=combined_results, genre_list=genre_list, selected_genre=selected_genre)
+
+    return render_template('genere.html', risultati=combined_results, genre_list=genre_list, selected_genre=selected_genre)
 
 @app.route('/giochi')
 def giochi():
