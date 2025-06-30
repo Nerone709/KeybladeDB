@@ -1,3 +1,4 @@
+from re import match
 from typing import Collection
 
 
@@ -219,6 +220,411 @@ def get_publisher_range(publisher_name, start_year, end_year, dataset_version: C
     ]
 
     return list(dataset_version.aggregate(pipeline))
+
+
+
+
+
+
+
+def get_max_avg_critic_score_for_publisher2016(collection: Collection, publisher_name):
+    pipeline = [
+        {
+            "$match": {
+                "Critic_Score": {"$ne": None},
+                "Publisher": publisher_name
+            }
+        },
+        {
+            "$addFields": {
+                "Critic_Score_Norm": {"$divide": ["$Critic_Score", 10]}
+            }
+        },
+        {
+            "$group": {
+                "_id": "$Publisher",
+                "avg_critic_score": {"$avg": "$Critic_Score_Norm"}
+            }
+        },
+        {
+            "$sort": {"avg_critic_score": -1}
+        },
+        {
+            "$limit": 1
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "Publisher": "$_id",
+                "avg_critic_score": 1
+            }
+        }
+    ]
+
+    result=collection.aggregate(pipeline)
+
+    if result:
+        return result[0]  # ritorna solo il primo risultato
+    else:
+        return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+def get_max_avg_critic_score_for_publisher_2024(collection: Collection, publisher_name):
+    pipeline = [
+        {
+            "$match": {
+                "critic_score": {"$ne": None},
+                "publisher": publisher_name
+            }
+        },
+        {
+            "$group": {
+                "_id": "$publisher",
+                "avg_critic_score": {"$avg": "$critic_score"}
+            }
+        },
+        {
+            "$sort": {"avg_critic_score": -1}
+        },
+        {
+            "$limit": 1
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "publisher": "$_id",
+                "avg_critic_score": 1
+            }
+        }
+    ]
+
+    result=collection.aggregate(pipeline)
+
+    if result:
+        return result[0]  # ritorna solo il primo risultato
+    else:
+        return None
+
+
+
+def get_avg_critic_score_for_specific_developer_2016(collection: Collection, developer_name):
+    pipeline = [
+        {
+            "$match": {
+                "Critic_Score": {"$ne": None},
+                "Developer": developer_name
+            }
+        },
+        {
+            "$addFields": {
+                "Critic_Score_norm": {"$divide": ["$Critic_Score", 10]}
+            }
+        },
+        {
+            "$group": {
+                "_id": "$Developer",
+                "avg_Critic_Score": {"$avg": "$Critic_Score_norm"}
+            }
+        },
+        {
+            "$sort": {"avg_Critic_Score": -1}
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "Developer": "$_id",
+                "avg_Critic_Score": 1
+            }
+        }
+    ]
+
+    return collection.aggregate(pipeline)
+
+
+def get_avg_critic_score_for_specific_developer_2024(collection: Collection, developer_name):
+    pipeline = [
+        {
+            "$match": {
+                "critic_score": {"$ne": None},
+                "developer": developer_name
+            }
+        },
+        {
+            "$group": {
+                "_id": "$developer",
+                "avg_critic_score": {"$avg": "$critic_score"}
+            }
+        },
+        {
+            "$sort": {"avg_critic_score": -1}
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "developer": "$_id",
+                "avg_critic_score": 1
+            }
+        }
+    ]
+
+    return collection.aggregate(pipeline)
+
+
+
+
+def get_avg_critic_score_for_specific_publisher_2016(collection: Collection, publisher_name):
+    pipeline = [
+        {
+            "$match": {
+                "Critic_Score": {"$ne": None},
+                "Publisher": publisher_name
+            }
+        },
+        {
+            "$addFields": {
+                "Critic_Score_norm": {"$divide": ["$Critic_Score", 10]}
+            }
+        },
+        {
+            "$group": {
+                "_id": "$Publisher",
+                "avg_Critic_Score": {"$avg": "$Critic_Score_norm"}
+            }
+        },
+        {
+            "$sort": {"avg_Critic_Score": -1}
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "Publisher": "$_id",
+                "avg_Critic_Score": 1
+            }
+        }
+    ]
+
+    return collection.aggregate(pipeline)
+
+
+def get_avg_critic_score_for_specific_publisher_2024(collection: Collection, publisher_name):
+    pipeline = [
+        {
+            "$match": {
+                "critic_score": {"$ne": None},
+                "publisher": publisher_name
+            }
+        },
+        {
+            "$group": {
+                "_id": "$publisher",
+                "avg_critic_score": {"$avg": "$critic_score"}
+            }
+        },
+        {
+            "$sort": {"avg_critic_score": -1}
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "publisher": "$_id",
+                "avg_critic_score": 1
+            }
+        }
+    ]
+
+    return collection.aggregate(pipeline)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#####################################################################
+
+def analyze_sales_by_region(game_title, year, collection):
+    field_map = {
+        "2016": {
+            "title": "Name",
+            "na_sales": "NA_Sales",
+            "jp_sales": "JP_Sales",
+            "pal_sales": "EU_Sales",
+            "other_sales": "Other_Sales"
+        },
+        "2024": {
+            "title": "title",
+            "na_sales": "na_sales",
+            "jp_sales": "jp_sales",
+            "pal_sales": "pal_sales",
+            "other_sales": "other_sales"
+        }
+    }
+
+    fields = field_map[str(year)]
+
+    pipeline = [
+        {
+            "$match": {
+                fields["title"]: {"$regex": f"^{game_title}$", "$options": "i"}
+            }
+        },
+        {
+            "$group": {
+                "_id": f"${fields['title']}",
+                "total_na_sales": {"$sum": f"${fields['na_sales']}"},
+                "total_jp_sales": {"$sum": f"${fields['jp_sales']}"},
+                "total_pal_sales": {"$sum": f"${fields['pal_sales']}"},
+                "total_other_sales": {"$sum": f"${fields['other_sales']}"}
+            }
+        },
+        {
+            "$match": {
+                "$or": [
+                    {"total_na_sales": {"$gt": 0}},
+                    {"total_jp_sales": {"$gt": 0}},
+                    {"total_pal_sales": {"$gt": 0}},
+                    {"total_other_sales": {"$gt": 0}}
+                ]
+            }
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    if result:
+        data = result[0]
+        title = data["_id"]
+
+        sales_by_region = {
+            "Nord America": data["total_na_sales"],
+            "Giappone": data["total_jp_sales"],
+            "Europa/PAL": data["total_pal_sales"],
+            "Altri": data["total_other_sales"]
+        }
+
+        max_region = max(sales_by_region, key=sales_by_region.get)
+        min_region = min(sales_by_region, key=sales_by_region.get)
+
+        return {
+            "title": title,
+            "year": year,
+            "max_region": max_region,
+            "max_value": sales_by_region[max_region],
+            "min_region": min_region,
+            "min_value": sales_by_region[min_region],
+            "sales_by_region": sales_by_region
+        }
+    else:
+        return None
+
+
+def get_all_games(collection_2016, collection_2024):
+        field_map = {
+            "2016": {
+                "title": "Name",
+                "console": "Platform",
+                "developer": "Developer",
+                "publisher": "Publisher",
+                "na_sales": "NA_Sales",
+                "jp_sales": "JP_Sales",
+                "pal_sales": "EU_Sales",
+                "other_sales": "Other_Sales"
+            },
+            "2024": {
+                "title": "title",
+                "console": "console",
+                "developer": "developer",
+                "publisher": "publisher",
+                "na_sales": "na_sales",
+                "jp_sales": "jp_sales",
+                "pal_sales": "pal_sales",
+                "other_sales": "other_sales"
+            }
+        }
+
+        # Pipeline base per giochi 2024
+        base_pipeline = [
+            {
+                "$project": {
+                    "_id":1,
+                    "title": f"${field_map['2024']['title']}",
+                    "console": f"${field_map['2024']['console']}",
+                    "developer": f"${field_map['2024']['developer']}",
+                    "publisher": f"${field_map['2024']['publisher']}",
+                    "anno": {"$literal": 2024}
+                }
+            },
+            {
+                "$unionWith": {
+                    "coll": collection_2016.name,
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 1,
+                                "title": f"${field_map['2016']['title']}",
+                                "console": f"${field_map['2016']['console']}",
+                                "developer": f"${field_map['2016']['developer']}",
+                                "publisher": f"${field_map['2016']['publisher']}",
+                                "anno": {"$literal": 2016}
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+
+
+        risultati = list(collection_2024.aggregate(base_pipeline))
+        return risultati
+
+
+def add_game(collection: Collection, game_data):
+    """
+    Aggiunge un nuovo gioco alla collezione MongoDB.
+    :param collection: La collezione MongoDB in cui inserire il gioco.
+    :param game_data: Un dizionario contenente i dati del gioco da inserire.
+    :return: Il risultato dell'inserimento.
+    """
+    result = collection.insert_one(game_data)
+    print(f"Gioco aggiunto con ID: {result.inserted_id}")
+    return result
+
+
+
+
+
+def delete_game(collection :Collection, id):
+    pipeline = {"_id": id}
+
+    result = collection.delete_one(pipeline)
+    return result.deleted_count > 0
+
+
+def get_all_title(collection_2016: Collection, collection_2024: Collection):
+    titles_2016 = collection_2016.distinct("Name")
+    titles_2024 = collection_2024.distinct("title")
+
+    combined = set(titles_2016) | set(titles_2024)  # unisce e rimuove duplicati
+    return sorted(combined)
+
 
 
 def get_all_ratings(collection: Collection):
