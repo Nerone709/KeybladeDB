@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Aggiungi Gioco</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+<div class="container mt-5">
+    <h2 class="mb-4">Aggiungi Nuovo Gioco</h2>
+
+    {% if success %}
+        <div class="alert alert-success">Gioco aggiunto con successo!</div>
+    {% endif %}
+
+    <form method="post">
+        <div class="row">
+            <!-- Colonna sinistra: Info Gioco -->
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Titolo</label>
+                    <input type="text" class="form-control" name="titolo" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Console</label>
+                    <input type="text" class="form-control" name="console" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Genere</label>
+                    <input type="text" class="form-control" name="genere" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Publisher</label>
+                    <input type="text" class="form-control" name="publisher" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Developer</label>
+                    <input type="text" class="form-control" name="developer" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Anno di uscita</label>
+                    <input type="number" class="form-control" name="anno" value="2025" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Collezione</label>
+                    <select name="collezione" class="form-select" required>
+                        <option value="2016">2016</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Colonna destra: Vendite e Score -->
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Vendite Nord America</label>
+                    <input type="number" step="0.01" class="form-control" name="na_sales" value="0" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Vendite Europa</label>
+                    <input type="number" step="0.01" class="form-control" name="pal_sales" value="0" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Vendite Giappone</label>
+                    <input type="number" step="0.01" class="form-control" name="jp_sales" value="0" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Vendite Altri Paesi</label>
+                    <input type="number" step="0.01" class="form-control" name="other_sales" value="0" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Critic Score</label>
+                    <input type="number" step="0.01" min="0" max="100" class="form-control" name="critic_score">
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success mt-3">Aggiungi Gioco</button>
+        <a href="/giochi" class="btn btn-secondary mt-3">Torna alla lista</a>
+    </form>
+</div>
+</body>
+</html>

@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request,Response
+from datetime import datetime
+from bson import ObjectId
+from flask import Flask, render_template, request, Response, jsonify, redirect,url_for
 import os
 import pymongo
 import json
@@ -48,9 +50,98 @@ def genre():
 
     return render_template('genere.html', risultati=combined_results, genre_list=genre_list, selected_genre=selected_genre)
 
-@app.route('/giochi')
-def giochi():
-    return "<h2>Lista dei giochi (in costruzione)</h2>"
+@app.route('/giochi', methods=['GET', 'POST'])
+def mostra_tutti_i_giochi():
+    if request.method == 'POST':
+        # Gestione cancellazione
+        data = request.get_json()
+        id = data.get("id")
+        collezione = data.get("collezione")
+
+        if str(collezione) == "2016":
+            collection = videogames2016
+        elif str(collezione) == "2024":
+            collection = videogames2024
+        else:
+            return jsonify({"success": False, "error": "Collezione non valida"}), 400
+
+        try:
+            object_id = ObjectId(id)
+        except:
+            return jsonify({"success": False, "error": "ID non valido"}), 400
+
+        success = queries.delete_game(collection, object_id)
+        return jsonify({"success": success})
+
+    # Metodo GET: carica la pagina
+    giochi = queries.get_all_games(videogames2016, videogames2024)
+    return render_template("giochi.html", giochi=giochi)
+
+
+
+
+@app.route('/aggiungi', methods=['GET', 'POST'])
+def aggiungi_gioco():
+    if request.method == 'POST':
+        titolo = request.form.get('titolo')
+        console = request.form.get('console')
+        genere = request.form.get('genere')
+        publisher = request.form.get('publisher')
+        developer = request.form.get('developer')
+        anno = int(request.form.get('anno'))
+        collezione = request.form.get('collezione')
+
+        # Vendite
+        na_sales = float(request.form.get('na_sales', 0))
+        pal_sales = float(request.form.get('pal_sales', 0))
+        jp_sales = float(request.form.get('jp_sales', 0))
+        other_sales = float(request.form.get('other_sales', 0))
+        critic_score = float(request.form.get('critic_score') or 0)
+
+        global_sales = na_sales + pal_sales + jp_sales + other_sales
+
+        # Prepara i dati in base alla collezione
+        if collezione == "2016":
+            game_data = {
+                "Name": titolo,
+                "Platform": console,
+                "Genre": genere,
+                "Publisher": publisher,
+                "Developer": developer,
+                "Year": anno,
+                "NA_Sales": na_sales,
+                "EU_Sales": pal_sales,
+                "JP_Sales": jp_sales,
+                "Other_Sales": other_sales,
+                "Global_Sales": global_sales,
+                "Critic_Score": critic_score
+            }
+            collection = videogames2016
+        elif collezione == "2024":
+            game_data = {
+                "title": titolo,
+                "console": console,
+                "genre": genere,
+                "publisher": publisher,
+                "developer": developer,
+                "year": anno,
+                "na_sales": na_sales,
+                "pal_sales": pal_sales,
+                "jp_sales": jp_sales,
+                "other_sales": other_sales,
+                "global_sales": global_sales,
+                "critic_score": critic_score
+            }
+            collection = videogames2024
+        else:
+            return "Collezione non valida", 400
+
+        queries.add_game(collection, game_data)
+        return redirect(url_for('mostra_tutti_i_giochi'))
+
+    return render_template("aggiungi.html")
+
+
 
 @app.route('/contatti')
 def contatti():
@@ -152,6 +243,37 @@ def developer():
     return render_template('pubblicazioni.html', risultati=None)
 
 
+@app.route('/vendite/gioco', methods=['GET', 'POST'])
+def vendita():
+    result = None
+    title_submitted = None
+    sales_labels = []
+    sales_values = []
+
+    # Recupera la lista unica di titoli da entrambi i dataset
+    all_titles = sorted(set(
+        db.videogames_2024.distinct("title") +
+        db.videogames_2016.distinct("Name")
+    ))
+
+    if request.method == 'POST':
+        game_title = request.form.get('title')
+        year = request.form.get('year')
+        title_submitted = game_title
+
+        if game_title and year:
+            collection = db[f"videogames_{year}"]
+            result = queries.analyze_sales_by_region(game_title, year, collection)
+            if result:
+                sales_labels = list(result['sales_by_region'].keys())
+                sales_values = list(result['sales_by_region'].values())
+
+    return render_template("vendita_gioco.html",
+                           result=result,
+                           title_submitted=title_submitted,
+                           sales_labels=sales_labels,
+                           sales_values=sales_values,
+                           all_titles=all_titles)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)
