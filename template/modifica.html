@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Modifica Gioco</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <style>
+    body {
+      color: #000;
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select {
+      padding: 5px;
+      font-size: 1em;
+      width: 220px;
+    }
+    button, a.btn {
+      margin-top: 20px;
+      padding: 10px 15px;
+      font-size: 1em;
+      text-decoration: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+    }
+    a.btn {
+      background-color: #6c757d;
+      color: white;
+      margin-left: 10px;
+    }
+    .error {
+      color: red;
+      margin-bottom: 15px;
+    }
+    .dataset-info {
+      font-weight: bold;
+      margin-bottom: 15px;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Modifica Gioco</h1>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <div class="dataset-info">
+    Dataset attuale: <span id="dataset_name">{{ collezione }}</span>
+  </div>
+
+  <form method="POST" action="">
+    <!-- Hidden collection -->
+    <input type="hidden" id="collezione" name="collezione" value="{{ collezione }}">
+
+    <!-- Critic Score -->
+    <label for="critic_score">Critic Score:</label>
+    <input type="text" id="critic_score" name="critic_score"
+           value="{{ gioco.Critic_Score or gioco.critic_score or '' }}">
+
+    <!-- Menu for sales -->
+    <label for="sales_type">Seleziona il tipo di sales da modificare:</label>
+    <select id="sales_type" name="sales_type" onchange="onSalesTypeChange()">
+      <!-- 2016 collection options -->
+      <option value="NA_Sales" data-collection="2016"
+              {% if collezione =='2016' %}selected{% endif %}>
+        NA Sales
+      </option>
+      <option value="EU_Sales" data-collection="2016"
+              {% if collezione =='2016' and sales_type == 'EU_Sales' %}selected{% endif %}>
+        EU Sales
+      </option>
+      <option value="JP_Sales" data-collection="2016"
+              {% if collezione =='2016' and sales_type =='JP_Sales' %}selected{% endif %}>
+        JP Sales
+      </option>
+      <option value="Other_Sales" data-collection="2016"
+              {% if collezione =='2016' and sales_type =='Other_Sales' %}selected{% endif %}>
+        Other Sales
+      </option>
+
+      <!-- 2024 Collection option -->
+      <option value="na_sales" data-collection="2024"
+              {% if collezione =='2024' %}selected{% endif %}>
+        NA Sales
+      </option>
+      <option value="pal_sales" data-collection="2024"
+              {% if collezione =='2024' and sales_type =='pal_sales' %}selected{% endif %}>
+        PAL Sales
+      </option>
+      <option value="jp_sales" data-collection="2024"
+              {% if collezione =='2024' and sales_type =='jp_sales' %}selected{% endif %}>
+        JP Sales
+      </option>
+      <option value="other_sales" data-collection="2024"
+              {% if collezione =='2024' and sales_type =='other_sales' %}selected{% endif %}>
+        Other Sales
+      </option>
+    </select>
+
+    <!-- Input for the selected element -->
+    <label id="sales_label" for="sales_value" style="margin-top:10px;">Valore sales:</label>
+    <input type="text" id="sales_value" name="sales_value" value="">
+
+    <button type="submit">Salva modifiche</button>
+    <a href="{{ url_for('mostra_tutti_i_giochi') }}" class="btn">Annulla</a>
+  </form>
+
+  <script>
+    function getSalesLabel(salesType) {
+      switch(salesType) {
+        case 'NA_Sales': return 'NA Sales';
+        case 'EU_Sales': return 'EU Sales';
+        case 'JP_Sales': return 'JP Sales';
+        case 'Other_Sales': return 'Other Sales';
+        case 'na_sales': return 'NA Sales';
+        case 'pal_sales': return 'PAL Sales';
+        case 'jp_sales': return 'JP Sales';
+        case 'other_sales': return 'Other Sales';
+        default: return 'Valore sales:';
+      }
+    }
+
+    function onSalesTypeChange() {
+      const salesSelect = document.getElementById('sales_type');
+      const salesType = salesSelect.value;
+      const salesLabel = document.getElementById('sales_label');
+      const salesInput = document.getElementById('sales_value');
+      const collezione = document.getElementById('collezione').value;
+      const gioco = {{ gioco | tojson }};
+
+      // Setting label text based on selected sales type
+      salesLabel.textContent = getSalesLabel(salesType);
+
+      // Getting the value for the selected sales type
+      let val = '';
+      if (gioco) {
+        val = gioco[salesType] || '';
+      }
+      salesInput.value = val;
+    }
+
+    window.onload = () => {
+      // Filter options based on the selected collection
+      const collezione = document.getElementById('collezione').value;
+      const salesSelect = document.getElementById('sales_type');
+
+      for (const option of salesSelect.options) {
+        if (option.dataset.collection === collezione) {
+          option.style.display = 'block';
+        } else {
+          option.style.display = 'none';
+        }
+      }
+
+      // Set the initial value of the sales input
+      if (salesSelect.selectedOptions.length > 0) {
+        if (salesSelect.selectedOptions[0].dataset.collection !== collezione) {
+          for (const option of salesSelect.options) {
+            if (option.style.display === 'block') {
+              salesSelect.value = option.value;
+              break;
+            }
+          }
+        }
+      }
+
+      onSalesTypeChange();
+    }
+  </script>
+</body>
+</html>

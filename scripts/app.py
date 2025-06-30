@@ -1,6 +1,7 @@
 from datetime import datetime
-from bson import ObjectId
-from flask import Flask, render_template, request, Response, jsonify, redirect,url_for
+from bson import ObjectId, errors
+from bson.errors import InvalidId
+from flask import Flask, render_template, request, Response, jsonify, redirect, url_for
 import os
 import pymongo
 import json
@@ -21,9 +22,12 @@ videogames2016 = db['videogames_2016']
 videogames2024 = db['videogames_2024']
 
 print("Connesso. Avvio dell'app in corso…")
+
+
 @app.route('/')
 def home():
     return render_template('index.html')
+
 
 @app.route('/genere', methods=['GET', 'POST'])
 def genre():
@@ -46,9 +50,12 @@ def genre():
                 combined_results.append(game)
                 combined_results.sort(key=lambda g: not bool(g.get("img")))
 
-        return render_template('genere.html', risultati=combined_results, genre_list=genre_list, selected_genre=selected_genre)
+        return render_template('genere.html', risultati=combined_results, genre_list=genre_list,
+                               selected_genre=selected_genre)
 
-    return render_template('genere.html', risultati=combined_results, genre_list=genre_list, selected_genre=selected_genre)
+    return render_template('genere.html', risultati=combined_results, genre_list=genre_list,
+                           selected_genre=selected_genre)
+
 
 @app.route('/giochi', methods=['GET', 'POST'])
 def mostra_tutti_i_giochi():
@@ -76,8 +83,6 @@ def mostra_tutti_i_giochi():
     # Metodo GET: carica la pagina
     giochi = queries.get_all_games(videogames2016, videogames2024)
     return render_template("giochi.html", giochi=giochi)
-
-
 
 
 @app.route('/aggiungi', methods=['GET', 'POST'])
@@ -142,6 +147,94 @@ def aggiungi_gioco():
     return render_template("aggiungi.html")
 
 
+@app.route('/modifica/<id>', methods=['GET', 'POST'])
+def modifica_gioco(id):
+    gioco_id = id
+    if request.method == 'POST':
+        collezione = request.form.get('collezione')
+        sales_type = request.form.get('sales_type')  # sales element chosen
+        sales_value = request.form.get('sales_value')  # value for the sales element
+        critic_score = request.form.get('critic_score')
+
+        # 2016 e 2024 has different field names
+        campi_2016 = {
+            "critic_score": "Critic_Score",
+            "NA_Sales": "NA_Sales",
+            "EU_Sales": "EU_Sales",
+            "JP_Sales": "JP_Sales",
+            "Other_Sales": "Other_Sales",
+        }
+
+        campi_2024 = {
+            "critic_score": "critic_score",
+            "na_sales": "na_sales",
+            "pal_sales": "pal_sales",
+            "jp_sales": "jp_sales",
+            "other_sales": "other_sales",
+        }
+
+        if collezione == "2016":
+            collection = videogames2016
+            mapping = campi_2016
+        elif collezione == "2024":
+            collection = videogames2024
+            mapping = campi_2024
+        else:
+            return "Collezione non valida", 400
+
+        update_data = {}
+
+        # Added critic_score if present
+        if critic_score:
+            try:
+                update_data[mapping["critic_score"]] = float(critic_score)
+            except ValueError:
+                pass
+
+        # Added the select sales_type and sales_value
+        if sales_type and sales_value:
+            # Mapping sales_type
+            if sales_type in mapping:
+                try:
+                    update_data[mapping[sales_type]] = float(sales_value)
+                except ValueError:
+                    pass
+
+        if update_data:
+            result = collection.update_one({"_id": gioco_id}, {"$set": update_data})
+            if result.modified_count > 0:
+                return redirect(url_for('mostra_tutti_i_giochi'))
+            else:
+                gioco = collection.find_one({"_id": gioco_id})
+                error_msg = "Nessuna modifica effettuata o dati non validi."
+                return render_template("modifica.html", gioco=gioco, collezione=collezione, error=error_msg, sales_type=sales_type)
+        else:
+            gioco = collection.find_one({"_id": gioco_id})
+            error_msg = "Nessun dato inserito per la modifica."
+            return render_template("modifica.html", gioco=gioco, collezione=collezione, error=error_msg, sales_type=sales_type)
+
+    else:
+        collezione = request.args.get('collezione')
+        if collezione == "2016":
+            collection = videogames2016
+        elif collezione == "2024":
+            collection = videogames2024
+        else:
+            return "Collezione non valida", 400
+
+        gioco = collection.find_one({"_id": gioco_id})
+        if not gioco:
+            return "Gioco non trovato", 404
+
+        # Sales type default value
+        default_sales_type = None
+        if collezione == "2016":
+            default_sales_type = "NA_Sales"
+        elif collezione == "2024":
+            default_sales_type = "na_sales"
+
+        return render_template("modifica.html", gioco=gioco, collezione=collezione, sales_type=default_sales_type)
+
 
 @app.route('/contatti')
 def contatti():
@@ -153,7 +246,7 @@ def rating_page():
     rating_list = queries.get_all_ratings(videogames2016)
     if rating_list is None:
         return Response(
-            "Errore: Impossibile recuperare la lista delle valutazioni.",status=500)
+            "Errore: Impossibile recuperare la lista delle valutazioni.", status=500)
     selected_rating = None
     results = []
 
@@ -161,7 +254,7 @@ def rating_page():
         selected_rating = request.form.get('selected_rating')
         results = list(queries.get_videogames_by_rating(selected_rating, videogames2016))
         if results is None:
-            return Response("Errore: Impossibile recuperare i risultati per la valutazione selezionata.",status=500)
+            return Response("Errore: Impossibile recuperare i risultati per la valutazione selezionata.", status=500)
 
     return render_template(
         'rating.html',
@@ -215,7 +308,9 @@ def developer_page():
         developers_list=combined_developers_list  # la lista di tutti i dev da mostrare nel select
     )
 
+
 from flask import request, render_template
+
 
 @app.route('/pubblicazioni', methods=['GET', 'POST'])
 def developer():
@@ -275,5 +370,6 @@ def vendita():
                            sales_values=sales_values,
                            all_titles=all_titles)
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000,debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

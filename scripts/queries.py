@@ -222,11 +222,6 @@ def get_publisher_range(publisher_name, start_year, end_year, dataset_version: C
     return list(dataset_version.aggregate(pipeline))
 
 
-
-
-
-
-
 def get_max_avg_critic_score_for_publisher2016(collection: Collection, publisher_name):
     pipeline = [
         {
@@ -261,23 +256,12 @@ def get_max_avg_critic_score_for_publisher2016(collection: Collection, publisher
         }
     ]
 
-    result=collection.aggregate(pipeline)
+    result = collection.aggregate(pipeline)
 
     if result:
         return result[0]  # ritorna solo il primo risultato
     else:
         return None
-
-
-
-
-
-
-
-
-
-
-
 
 
 def get_max_avg_critic_score_for_publisher_2024(collection: Collection, publisher_name):
@@ -309,13 +293,12 @@ def get_max_avg_critic_score_for_publisher_2024(collection: Collection, publishe
         }
     ]
 
-    result=collection.aggregate(pipeline)
+    result = collection.aggregate(pipeline)
 
     if result:
         return result[0]  # ritorna solo il primo risultato
     else:
         return None
-
 
 
 def get_avg_critic_score_for_specific_developer_2016(collection: Collection, developer_name):
@@ -381,8 +364,6 @@ def get_avg_critic_score_for_specific_developer_2024(collection: Collection, dev
     return collection.aggregate(pipeline)
 
 
-
-
 def get_avg_critic_score_for_specific_publisher_2016(collection: Collection, publisher_name):
     pipeline = [
         {
@@ -446,16 +427,16 @@ def get_avg_critic_score_for_specific_publisher_2024(collection: Collection, pub
     return collection.aggregate(pipeline)
 
 
+def modify_game(collection, id, game_data):
+    pipeline = {"_id": id}  # id stringa
+    result = collection.update_one(pipeline, {"$set": game_data})
 
-
-
-
-
-
-
-
-
-
+    if result.modified_count > 0:
+        print(f"Game with ID {id} modified successfully.")
+        return collection.find_one(pipeline)
+    else:
+        print(f"No game found with ID {id} or no changes made.")
+        return None
 
 
 #####################################################################
@@ -537,63 +518,62 @@ def analyze_sales_by_region(game_title, year, collection):
 
 
 def get_all_games(collection_2016, collection_2024):
-        field_map = {
-            "2016": {
-                "title": "Name",
-                "console": "Platform",
-                "developer": "Developer",
-                "publisher": "Publisher",
-                "na_sales": "NA_Sales",
-                "jp_sales": "JP_Sales",
-                "pal_sales": "EU_Sales",
-                "other_sales": "Other_Sales"
-            },
-            "2024": {
-                "title": "title",
-                "console": "console",
-                "developer": "developer",
-                "publisher": "publisher",
-                "na_sales": "na_sales",
-                "jp_sales": "jp_sales",
-                "pal_sales": "pal_sales",
-                "other_sales": "other_sales"
+    field_map = {
+        "2016": {
+            "title": "Name",
+            "console": "Platform",
+            "developer": "Developer",
+            "publisher": "Publisher",
+            "na_sales": "NA_Sales",
+            "jp_sales": "JP_Sales",
+            "pal_sales": "EU_Sales",
+            "other_sales": "Other_Sales"
+        },
+        "2024": {
+            "title": "title",
+            "console": "console",
+            "developer": "developer",
+            "publisher": "publisher",
+            "na_sales": "na_sales",
+            "jp_sales": "jp_sales",
+            "pal_sales": "pal_sales",
+            "other_sales": "other_sales"
+        }
+    }
+
+    # Pipeline base per giochi 2024
+    base_pipeline = [
+        {
+            "$project": {
+                "_id": 1,
+                "title": f"${field_map['2024']['title']}",
+                "console": f"${field_map['2024']['console']}",
+                "developer": f"${field_map['2024']['developer']}",
+                "publisher": f"${field_map['2024']['publisher']}",
+                "anno": {"$literal": 2024}
+            }
+        },
+        {
+            "$unionWith": {
+                "coll": collection_2016.name,
+                "pipeline": [
+                    {
+                        "$project": {
+                            "_id": 1,
+                            "title": f"${field_map['2016']['title']}",
+                            "console": f"${field_map['2016']['console']}",
+                            "developer": f"${field_map['2016']['developer']}",
+                            "publisher": f"${field_map['2016']['publisher']}",
+                            "anno": {"$literal": 2016}
+                        }
+                    }
+                ]
             }
         }
+    ]
 
-        # Pipeline base per giochi 2024
-        base_pipeline = [
-            {
-                "$project": {
-                    "_id":1,
-                    "title": f"${field_map['2024']['title']}",
-                    "console": f"${field_map['2024']['console']}",
-                    "developer": f"${field_map['2024']['developer']}",
-                    "publisher": f"${field_map['2024']['publisher']}",
-                    "anno": {"$literal": 2024}
-                }
-            },
-            {
-                "$unionWith": {
-                    "coll": collection_2016.name,
-                    "pipeline": [
-                        {
-                            "$project": {
-                                "_id": 1,
-                                "title": f"${field_map['2016']['title']}",
-                                "console": f"${field_map['2016']['console']}",
-                                "developer": f"${field_map['2016']['developer']}",
-                                "publisher": f"${field_map['2016']['publisher']}",
-                                "anno": {"$literal": 2016}
-                            }
-                        }
-                    ]
-                }
-            }
-        ]
-
-
-        risultati = list(collection_2024.aggregate(base_pipeline))
-        return risultati
+    risultati = list(collection_2024.aggregate(base_pipeline))
+    return risultati
 
 
 def add_game(collection: Collection, game_data):
@@ -608,10 +588,7 @@ def add_game(collection: Collection, game_data):
     return result
 
 
-
-
-
-def delete_game(collection :Collection, id):
+def delete_game(collection: Collection, id):
     pipeline = {"_id": id}
 
     result = collection.delete_one(pipeline)
@@ -624,7 +601,6 @@ def get_all_title(collection_2016: Collection, collection_2024: Collection):
 
     combined = set(titles_2016) | set(titles_2024)  # unisce e rimuove duplicati
     return sorted(combined)
-
 
 
 def get_all_ratings(collection: Collection):
