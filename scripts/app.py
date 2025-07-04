@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from bson import ObjectId, errors
 from bson.errors import InvalidId
@@ -6,6 +7,7 @@ import os
 import pymongo
 import json
 from pygments.lexer import combined
+import socket
 
 import queries
 
@@ -23,6 +25,13 @@ videogames2024 = db['videogames_2024']
 
 print("Connesso. Avvio dell'app in corso…")
 
+
+
+def safe_int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 @app.route('/')
 def home():
@@ -60,7 +69,7 @@ def genre():
 @app.route('/giochi', methods=['GET', 'POST'])
 def mostra_tutti_i_giochi():
     if request.method == 'POST':
-        # Gestione cancellazione
+        # Gestione cancellazione (lascia così)
         data = request.get_json()
         id = data.get("id")
         collezione = data.get("collezione")
@@ -80,9 +89,23 @@ def mostra_tutti_i_giochi():
         success = queries.delete_game(collection, object_id)
         return jsonify({"success": success})
 
-    # Metodo GET: carica la pagina
-    giochi = queries.get_all_games(videogames2016, videogames2024)
-    return render_template("giochi.html", giochi=giochi)
+    # Metodo GET
+    search = request.args.get("search", "").strip()
+    page = safe_int(request.args.get("page"), 1)
+    limit = safe_int(request.args.get("limit"), 100)
+
+    if search:
+        risultati = queries.search_games_by_title(videogames2016, videogames2024, search, page, limit)
+        return jsonify(risultati)
+    else:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # Se è chiamata fetch/ajax senza search, rispondi con JSON
+            risultati = queries.get_all_games(videogames2016, videogames2024, page=page, limit=limit)
+            return jsonify(risultati)
+        else:
+            # Se è richiesta normale (prima apertura pagina), rendi il template con giochi
+            giochi = queries.get_all_games(videogames2016, videogames2024, page=page, limit=limit)
+            return render_template("giochi.html", giochi=giochi)
 
 
 @app.route('/aggiungi', methods=['GET', 'POST'])
@@ -108,6 +131,7 @@ def aggiungi_gioco():
         # Prepara i dati in base alla collezione
         if collezione == "2016":
             game_data = {
+                "_id": str(uuid.uuid4()),
                 "Name": titolo,
                 "Platform": console,
                 "Genre": genere,
@@ -124,6 +148,7 @@ def aggiungi_gioco():
             collection = videogames2016
         elif collezione == "2024":
             game_data = {
+                "_id": str(uuid.uuid4()),
                 "title": titolo,
                 "console": console,
                 "genre": genere,
@@ -213,27 +238,38 @@ def modifica_gioco(id):
             error_msg = "Nessun dato inserito per la modifica."
             return render_template("modifica.html", gioco=gioco, collezione=collezione, error=error_msg, sales_type=sales_type)
 
+
     else:
+
         collezione = request.args.get('collezione')
         if collezione == "2016":
             collection = videogames2016
+            collection_2024 = videogames2024
         elif collezione == "2024":
             collection = videogames2024
+            collection_2024 = None
         else:
             return "Collezione non valida", 400
-
         gioco = collection.find_one({"_id": gioco_id})
         if not gioco:
             return "Gioco non trovato", 404
-
-        # Sales type default value
+        img_path = None
+        if collezione == "2016":
+            filtro_2024 = {
+                "title": gioco.get("Name"),
+                "console": gioco.get("Platform")
+            }
+            gioco_2024 = collection_2024.find_one(filtro_2024)
+            if gioco_2024 and "img" in gioco_2024:
+                img_path = gioco_2024["img"]
+        else:
+            img_path = gioco.get("img")
         default_sales_type = None
         if collezione == "2016":
             default_sales_type = "NA_Sales"
         elif collezione == "2024":
             default_sales_type = "na_sales"
-
-        return render_template("modifica.html", gioco=gioco, collezione=collezione, sales_type=default_sales_type)
+        return render_template("modifica.html", gioco=gioco, collezione=collezione, sales_type=default_sales_type,img_path=img_path)
 
 
 @app.route('/contatti')
@@ -263,49 +299,46 @@ def rating_page():
         results=results
     )
 
+from flask import request, jsonify, render_template
 
 @app.route('/sviluppatore', methods=['GET', 'POST'])
 def developer_page():
+    # Se è richiesta autocomplete via GET con ?autocomplete=1&q=...
+    if request.args.get('autocomplete') == '1':
+        q = request.args.get('q', '').lower()
+        # Recupera lista completa sviluppatori da entrambe le dataset
+        devs_2016 = queries.get_all_developer2016(videogames2016)
+        devs_2024 = queries.get_all_developer2024(videogames2024)
+        if devs_2016 is None or devs_2024 is None:
+            return jsonify([])  # fallback in caso di errore
+
+        combined = sorted(set(devs_2016 + devs_2024))
+        # Filtra i nomi in base alla query (case insensitive)
+        filtered = [dev for dev in combined if q in dev.lower()]
+        # Limita i suggerimenti (es. max 10)
+        return jsonify(filtered[:10])
+
+    # Altrimenti gestisci il POST per la ricerca giochi
     results = []
     selected_dataset = None
-    developer_name = None
-
-    # Recupera sviluppatori dai due dataset
-    devs_2016 = queries.get_all_developer2016(videogames2016)
-    devs_2024 = queries.get_all_developer2024(videogames2024)
-
-    if devs_2016 is None or devs_2024 is None:
-        return Response("Errore: Impossibile recuperare la lista degli sviluppatori.", status=500)
-
-    # Unisci rimuovendo duplicati
-    combined_developers_list = sorted(set(devs_2016 + devs_2024))
+    developer_name = []
 
     if request.method == 'POST':
         selected_dataset = request.form.get('selected_dataset')
-        developer_name = request.form.getlist('developer_name')  # <-- qui prende sempre una lista
+        raw_input = request.form.get('developer_name', '')
+        developer_name = [dev.strip() for dev in raw_input.split(',') if dev.strip()]
 
-        if selected_dataset == '2016':
-            if developer_name:
+        if developer_name:
+            if selected_dataset == '2016':
                 results = list(queries.get_sales_by_developer2016(videogames2016, developer_name))
-                if results is None:
-                    return Response("Errore: Impossibile recuperare i risultati per lo sviluppatore selezionato.",
-                                    status=500)
-
-        elif selected_dataset == '2024':
-            if developer_name:
+            elif selected_dataset == '2024':
                 results = list(queries.get_sales_by_developer2024(videogames2024, developer_name))
-                if results is None:
-                    return Response("Errore: Impossibile recuperare i risultati per lo sviluppatore selezionato.",
-                                    status=500)
-    else:
-        developer_name = []
 
     return render_template(
         'developer.html',
         selected_dataset=selected_dataset,
-        developer_name=developer_name,  # ora è sempre lista
-        results=results,
-        developers_list=combined_developers_list  # la lista di tutti i dev da mostrare nel select
+        developer_name=developer_name,
+        results=results
     )
 
 
@@ -371,5 +404,21 @@ def vendita():
                            all_titles=all_titles)
 
 
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Connessione fittizia per ottenere l'IP locale
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
+    finally:
+        s.close()
+
+
+
+
 if __name__ == '__main__':
+    local_ip = get_local_ip()
+    print(f"App disponibile su: http://{local_ip}:5000")
     app.run(host='0.0.0.0', port=5000, debug=True)

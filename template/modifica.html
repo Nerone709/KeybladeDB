@@ -5,22 +5,25 @@
   <title>Modifica Gioco</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <style>
-    body {
+    /* Incapsuliamo tutto dentro #modifica-gioco-page */
+    #modifica-gioco-page {
       color: #000;
       font-family: Arial, sans-serif;
       margin: 20px;
     }
-    label {
+    #modifica-gioco-page label {
       display: block;
       margin-top: 10px;
       font-weight: bold;
     }
-    input, select {
+    #modifica-gioco-page input,
+    #modifica-gioco-page select {
       padding: 5px;
       font-size: 1em;
       width: 220px;
     }
-    button, a.btn {
+    #modifica-gioco-page button,
+    #modifica-gioco-page a.btn {
       margin-top: 20px;
       padding: 10px 15px;
       font-size: 1em;
@@ -28,57 +31,122 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    button {
+    #modifica-gioco-page button {
       background-color: #007bff;
       color: white;
       border: none;
     }
-    a.btn {
+    #modifica-gioco-page a.btn {
       background-color: #6c757d;
       color: white;
       margin-left: 10px;
     }
-    .error {
+    #modifica-gioco-page .error {
       color: red;
       margin-bottom: 15px;
     }
-    .dataset-info {
+    #modifica-gioco-page .dataset-info {
       font-weight: bold;
       margin-bottom: 15px;
       font-size: 1.1em;
     }
+    #modifica-gioco-page .container {
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    #modifica-gioco-page .form-container {
+      flex: 1;
+      max-width: 500px;
+      overflow-y: auto;
+    }
+    #modifica-gioco-page .image-container {
+      height: 100vh;
+      margin: 0;
+      padding-left: 300px;
+
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+    }
+  #modifica-gioco-page .image-container img {
+    max-height: 80vh;
+    width: auto;
+    border-radius: 0;
+    box-shadow: none;
+    object-fit: contain;
+  }
+    /* Responsive verticale per questa pagina */
+    @media (max-width: 767px) {
+      #modifica-gioco-page .container {
+        flex-direction: column;
+        height: auto;
+        padding: 10px;
+      }
+      #modifica-gioco-page .form-container {
+        display: block !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        height: auto !important;
+      }
+      #modifica-gioco-page form {
+        display: block !important;
+        height: auto !important;
+      }
+      #modifica-gioco-page .image-container {
+        padding-left: 0;
+        margin-top: 20px;
+        height: auto;
+        justify-content: center;
+      }
+      #modifica-gioco-page .image-container img {
+        max-width: 80%;
+        max-height: 40vh;
+        height: auto;
+      }
+      #modifica-gioco-page label,
+      #modifica-gioco-page input,
+      #modifica-gioco-page select {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Modifica Gioco</h1>
+<div id="modifica-gioco-page">
+  <h1 style="color: #5cc7ec">Modifica Gioco</h1>
 
   {% if error %}
     <div class="error">{{ error }}</div>
   {% endif %}
 
-  <div class="dataset-info">
-    Dataset attuale: <span id="dataset_name">{{ collezione }}</span>
+  <div class="dataset-info" style="color: #5cc7ec">
+    Dataset attuale: <span id="dataset_name" >{{ collezione }}</span>
   </div>
-
+<div class="container">
+  <div class="form-container">
   <form method="POST" action="">
     <!-- Hidden collection -->
     <input type="hidden" id="collezione" name="collezione" value="{{ collezione }}">
 
     <!-- Critic Score -->
-    <label for="critic_score">Critic Score:</label>
+    <label for="critic_score" style="color: #5cc7ec">Critic Score:</label>
     <input type="text" id="critic_score" name="critic_score"
            value="{{ gioco.Critic_Score or gioco.critic_score or '' }}">
 
     <!-- Menu for sales -->
-    <label for="sales_type">Seleziona il tipo di sales da modificare:</label>
-    <select id="sales_type" name="sales_type" onchange="onSalesTypeChange()">
+    <label for="sales_type" style="color: #5cc7ec">Seleziona il tipo di sales da modificare:</label>
+    <select  id="sales_type" name="sales_type" onchange="onSalesTypeChange()">
       <!-- 2016 collection options -->
       <option value="NA_Sales" data-collection="2016"
               {% if collezione =='2016' %}selected{% endif %}>
         NA Sales
       </option>
       <option value="EU_Sales" data-collection="2016"
-              {% if collezione =='2016' and sales_type == 'EU_Sales' %}selected{% endif %}>
+              {% if collezione =='2016' and sales_type =='EU_Sales' %}selected{% endif %}>
         EU Sales
       </option>
       <option value="JP_Sales" data-collection="2016"
@@ -110,13 +178,22 @@
     </select>
 
     <!-- Input for the selected element -->
-    <label id="sales_label" for="sales_value" style="margin-top:10px;">Valore sales:</label>
+    <label  style="color: #5cc7ec" id="sales_label" for="sales_value" style="margin-top:10px;">Valore sales:</label>
     <input type="text" id="sales_value" name="sales_value" value="">
 
     <button type="submit">Salva modifiche</button>
     <a href="{{ url_for('mostra_tutti_i_giochi') }}" class="btn">Annulla</a>
   </form>
-
+  </div>
+  <div class="image-container">
+    {% if img_path %}
+      <img src="https://www.vgchartz.com{{ img_path }}" alt="Immagine gioco" />
+    {% else %}
+      <p>Nessuna immagine disponibile</p>
+    {% endif %}
+  </div>
+</div>
+</div>
   <script>
     function getSalesLabel(salesType) {
       switch(salesType) {

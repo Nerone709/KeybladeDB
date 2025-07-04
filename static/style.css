@@ -3,14 +3,12 @@ body::before {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: url('assets/supermario.gif') no-repeat center center / contain; /* Cambia 'cover' a 'contain' qui */
-    opacity: 0.1;
+    width: 100%;
+    height: 100%;
+    background: url('assets/supermario.gif') no-repeat center center / cover; /* <-- cambia qui */
     z-index: -1000;
     pointer-events: none;
 }
-
 body::after {
     content: "";
     position: fixed;
@@ -18,11 +16,10 @@ body::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: 150px;
-    opacity: 0.1;
     z-index: -1000;
     pointer-events: none;
 }
+
 
 .text-blur-box {
     display: inline-block;
@@ -33,6 +30,13 @@ body::after {
     -webkit-backdrop-filter: blur(10px); /* per Safari */
     color: white;
 }
+
+
+.logo-img {
+    max-height: 50px;
+    width: auto;
+}
+
 
 
 /* ===== STRUTTURA BASE ===== */
@@ -69,8 +73,8 @@ main {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     z-index: -1;
     overflow: hidden;
 }
@@ -267,6 +271,13 @@ main {
     line-height: 1.6;
 }
 
+.nav-link {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+
+
 
 .about-content {
     display: flex;
@@ -307,4 +318,140 @@ main {
 
 .nav-item.dropdown:hover > .dropdown-menu {
   display: block;
+}
+
+
+
+
+
+
+
+@media (max-width: 768px) {
+    .about-container {
+        padding: 1.5rem;
+    }
+
+    .about-container h2 {
+        font-size: 1.8rem;
+    }
+
+    .about-container p {
+        font-size: 1rem;
+    }
+
+    .about-images {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .game-card {
+        padding: 1rem;
+    }
+
+    .text-blur-box {
+        padding: 1rem;
+    }
+
+    .developer-checkboxes {
+        max-height: 200px;
+    }
+
+    .btn-gaming {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+}
+
+@media (max-width: 768px) {
+    .logo-img {
+        max-height: 40px;
+    }
+}
+@media (min-width: 992px) {
+  .nav-item.dropdown:hover .dropdown-menu {
+    display: block;
+  }
+}
+@media (min-width: 576px) {
+  .footer-link {
+    margin-right: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  body::before {
+    background-size: cover; /* oppure 'contain' se vuoi adattarla diversamente su mobile */
+  }
+}
+@media (max-width: 768px) {
+  body::after {
+    display: none;
+      opacity: 0;
+  }
+}
+/* Tabella scrollabile su schermi piccoli */
+@media (max-width: 768px) {
+  #giochi-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* scrolling fluido su iOS */
+  }
+  #giochi-table thead,
+  #giochi-table tbody,
+  #giochi-table th,
+  #giochi-table td,
+  #giochi-table tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  /* Adatta input di ricerca e bottone */
+  #search-input {
+    width: 100% !important;
+    margin-bottom: 1rem;
+  }
+
+  .d-flex.justify-content-between {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-success {
+    width: 100%;
+  }
+}
+
+
+
+@media (max-width: 767px) {
+  .container {
+    flex-direction: column;
+    padding: 10px;
+    min-height: auto;
+  }
+  .form-container {
+    max-width: 100%;
+  }
+  .image-container {
+    max-width: 100%;
+    padding-left: 0;
+    margin-top: 20px;
+    justify-content: center;
+  }
+  .image-container img {
+    max-width: 100%;
+    height: auto;
+  }
+  input, select {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  form {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
 }

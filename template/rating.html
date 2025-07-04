@@ -13,23 +13,39 @@
 
   <!-- Custom CSS -->
   <link rel="stylesheet" href="static/style.css">
+  <style>
+      @media (max-width: 576px) {
+        table th, table td {
+          white-space: nowrap;
+          font-size: 0.4em;
+          padding: 0.2rem;
+        }
+      }
+  </style>
 </head>
 <body>
+
+
 
 {% include 'header.html' %}
 
 <main class="container mt-5 text-light">
-  <h2 class="text-center mb-4">Cerca videogiochi per Rating</h2>
+  <h2 class="text-center mb-4" style="color: #5cc7ec">Cerca videogiochi per Rating</h2>
 
-  <form method="POST" class="d-flex justify-content-center mb-4">
-    <select name="selected_rating" class="form-select w-auto me-2" required>
-      <option value="">-- Seleziona un rating --</option>
+ <form method="POST" class="row g-2 justify-content-center mb-4">
+  <div class="col-12 col-md-auto">
+    <select name="selected_rating" class="form-select" required>
+      <option value="" >-- Seleziona un rating --</option>
       {% for rating in rating_list %}
         <option value="{{ rating }}" {% if selected_rating == rating %}selected{% endif %}>{{ rating }}</option>
       {% endfor %}
     </select>
-    <button type="submit" class="btn btn-warning">Cerca</button>
-  </form>
+  </div>
+  <div class="col-12 col-md-auto">
+    <button type="submit" class="btn btn-warning w-100">Cerca</button>
+  </div>
+</form>
+
 
   {% if selected_rating %}
     <h4 class="text-center text-info">Giochi con rating: {{ selected_rating }}</h4>
