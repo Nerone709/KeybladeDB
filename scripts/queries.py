@@ -577,7 +577,6 @@ def get_all_games(collection_2016, collection_2024,page=1,limit=100):
     risultati = list(collection_2024.aggregate(base_pipeline))
     return risultati
 
-
 import re
 
 def search_games_by_title(collection_2016, collection_2024, search, page=1, limit=100):
