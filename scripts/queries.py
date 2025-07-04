@@ -517,7 +517,7 @@ def analyze_sales_by_region(game_title, year, collection):
         return None
 
 
-def get_all_games(collection_2016, collection_2024):
+def get_all_games(collection_2016, collection_2024,page=1,limit=100):
     field_map = {
         "2016": {
             "title": "Name",
@@ -569,11 +569,47 @@ def get_all_games(collection_2016, collection_2024):
                     }
                 ]
             }
-        }
+        },
+        {"$skip": (page - 1) * limit},
+        {"$limit": limit}
     ]
 
     risultati = list(collection_2024.aggregate(base_pipeline))
     return risultati
+
+
+import re
+
+def search_games_by_title(collection_2016, collection_2024, search, page=1, limit=100):
+    skip = (page - 1) * limit
+    regex = re.compile(re.escape(search), re.IGNORECASE)
+
+    giochi_2024 = list(collection_2024.find({"title": regex}).skip(skip).limit(limit))
+    giochi_2016 = list(collection_2016.find({"Name": regex}).skip(skip).limit(limit))
+
+    risultati = []
+    for g in giochi_2024:
+        risultati.append({
+            "_id": str(g["_id"]),
+            "title": g.get("title", "N/A"),
+            "console": g.get("console", "N/A"),
+            "developer": g.get("developer", "N/A"),
+            "publisher": g.get("publisher", "N/A"),
+            "anno": 2024
+        })
+    for g in giochi_2016:
+        risultati.append({
+            "_id": str(g["_id"]),
+            "title": g.get("Name", "N/A"),
+            "console": g.get("Platform", "N/A"),
+            "developer": g.get("Developer", "N/A"),
+            "publisher": g.get("Publisher", "N/A"),
+            "anno": 2016
+        })
+
+    risultati.sort(key=lambda x: x["title"].lower())
+    return risultati
+
 
 
 def add_game(collection: Collection, game_data):
@@ -602,6 +638,13 @@ def get_all_title(collection_2016: Collection, collection_2024: Collection):
     combined = set(titles_2016) | set(titles_2024)  # unisce e rimuove duplicati
     return sorted(combined)
 
+
+def get_all_developer(collection_2016: Collection, collection_2024: Collection):
+    titles_2016 = collection_2016.distinct("Developer")
+    titles_2024 = collection_2024.distinct("developer")
+
+    combined = set(titles_2016) | set(titles_2024)  # unisce e rimuove duplicati
+    return sorted(combined)
 
 def get_all_ratings(collection: Collection):
     """
