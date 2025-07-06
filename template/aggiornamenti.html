@@ -34,6 +34,16 @@
           display: none;
         }
       }
+      .release-date {
+    color: #4caf50 !important; /* verde */
+    font-weight: 600;
+}
+
+.last-update {
+    color: #f44336 !important; /* rosso */
+    font-weight: 600;
+}
+
     </style>
 
     <!-- Custom CSS -->
@@ -70,9 +80,9 @@
                 <td>{{ game.developer }}</td>
                 <td>{{ game.publisher }}</td>
                 <td>{{ game.genre }}</td>
-                <td>{{ game.total_sales if game.total_sales else "N/D" }}</td>
-                <td>{{ game.release_year }}</td>
-                <td>{{ game.last_update if game.last_update else "N/D" }}</td>
+                <td>{{ game.total_sales if game.total_sales else "0.0" }}</td>
+                <td class="release-date" >{{ game.release_year }}</td>
+                <td class="last-update" >{{ game.last_update if game.last_update else "N/D" }}</td>
             </tr>
             {% endfor %}
             </tbody>
