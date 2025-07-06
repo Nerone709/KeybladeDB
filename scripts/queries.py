@@ -1,5 +1,7 @@
 from re import match
 from typing import Collection
+import re
+
 
 
 def get_videogames_by_rating(rating, collection: Collection):
@@ -577,7 +579,6 @@ def get_all_games(collection_2016, collection_2024,page=1,limit=100):
     risultati = list(collection_2024.aggregate(base_pipeline))
     return risultati
 
-import re
 
 def search_games_by_title(collection_2016, collection_2024, search, page=1, limit=100):
     skip = (page - 1) * limit
@@ -608,6 +609,55 @@ def search_games_by_title(collection_2016, collection_2024, search, page=1, limi
 
     risultati.sort(key=lambda x: x["title"].lower())
     return risultati
+
+
+
+def get_updated_game(collection: Collection):
+    pipeline = [
+        # Estrai l'anno dalla data di rilascio
+        {
+            "$addFields": {
+                "release_year": {
+                    "$toInt": {
+                        "$substr": [{"$ifNull": ["$release_date", "0"]}, 0, 4]
+                    }
+                }
+            }
+        },
+        # Filtra solo i giochi rilasciati dal 2017 in poi
+        {
+            "$match": {
+                "release_year": {"$gte": 2017}
+            }
+        },
+        # Proietta tutti i campi desiderati, incluso last_update
+        {
+            "$project": {
+                "_id": 0,
+                "title": 1,
+                "console": 1,
+                "developer": 1,
+                "publisher": 1,
+                "genre": 1,
+                "na_sales": 1,
+                "jp_sales": 1,
+                "pal_sales": 1,
+                "other_sales": 1,
+                "total_sales": 1,
+                "release_date": 1,
+                "release_year": 1,
+                "last_update": 1  # Include il campo last_update
+            }
+        },
+        # Ordina per anno e poi per data di rilascio
+        {
+            "$sort": {
+                "release_year": 1,
+                "release_date": 1
+            }
+        }
+    ]
+    return list(collection.aggregate(pipeline))
 
 
 
