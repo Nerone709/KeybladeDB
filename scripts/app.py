@@ -404,6 +404,13 @@ def vendita():
                            all_titles=all_titles)
 
 
+
+@app.route("/aggiornamenti")
+def aggiornamenti():
+    giochi = queries.get_updated_game(videogames2024)
+    return render_template("aggiornamenti.html", giochi=giochi)
+
+
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
