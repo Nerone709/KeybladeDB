@@ -427,7 +427,7 @@ def user_score_developer():
     developer = request.args.get("developer")
     results = []
     if developer:
-        results = queries.get_avg_user_score_by_developer(db.videogames_2016, developer)
+        results = queries.get_avg_user_score_by_developer(videogames2016, developer)
     return render_template("user_score-developer.html", results=results, searched=developer)
 
 @app.route("/Votazioni/Utenti/Publisher", methods=["GET"])
@@ -435,8 +435,18 @@ def user_score_publisher():
     developer = request.args.get("publisher")
     results = []
     if developer:
-        results = queries.get_avg_user_score_by_publisher(db.videogames_2016, developer)
+        results = queries.get_avg_user_score_by_publisher(videogames2016, developer)
     return render_template("user_score-publisher.html", results=results, searched=developer)
+
+@app.route("/Votazioni/Numero_totale_votazioni/Developer", methods=["GET"])
+def critic_count_developer():
+    results = queries.get_total_critic_count_by_developer_2016(videogames2016)
+    return render_template("critic_count-developer.html", results=results)
+
+@app.route("/Votazioni/Numero_totale_votazioni/Publisher", methods=["GET"])
+def critic_count_publisher():
+    results = queries.get_total_critic_count_by_publisher_2016(videogames2016)
+    return render_template("critic_count-publisher.html", results=results)
 
 
 if __name__ == '__main__':

@@ -757,6 +757,68 @@ def get_avg_user_score_by_publisher(collection: Collection, publisher_name):
     ]
     return list(collection.aggregate(pipeline))
 
+def get_total_critic_count_by_developer_2016(collection: Collection):
+    pipeline = [
+        # 1. Filtra documenti con Critic_Count e Publisher non nulli
+        {
+            "$match": {
+                "Critic_Count": {"$ne": None},
+                "Developer": {"$ne": None}
+            }
+        },
+        # 2. Raggruppa per Publisher e somma Critic_Count
+        {
+            "$group": {
+                "_id": "$Developer",
+                "total_Critic_Count": {"$sum": "$Critic_Count"}
+            }
+        },
+        # 3. Ordina per somma decrescente
+        {
+            "$sort": {"total_Critic_Count": -1}
+        },
+        # 4. Proietta output pulito
+        {
+            "$project": {
+                "_id": 0,
+                "Developer": "$_id",
+                "total_Critic_Count": 1
+            }
+        }
+    ]
+    return list(collection.aggregate(pipeline))
+
+def get_total_critic_count_by_publisher_2016(collection: Collection):
+    pipeline = [
+        # 1. Filtra documenti con Critic_Count e Publisher non nulli
+        {
+            "$match": {
+                "Critic_Count": {"$ne": None},
+                "Publisher": {"$ne": None}
+            }
+        },
+        # 2. Raggruppa per Publisher e somma Critic_Count
+        {
+            "$group": {
+                "_id": "$Publisher",
+                "total_Critic_Count": {"$sum": "$Critic_Count"}
+            }
+        },
+        # 3. Ordina per somma decrescente
+        {
+            "$sort": {"total_Critic_Count": -1}
+        },
+        # 4. Proietta output pulito
+        {
+            "$project": {
+                "_id": 0,
+                "Publisher": "$_id",
+                "total_Critic_Count": 1
+            }
+        }
+    ]
+    return list(collection.aggregate(pipeline))
+
 
 def get_all_developer2024(collection: Collection):
     """
