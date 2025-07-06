@@ -173,3 +173,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .idea/
+
+# Aggiunta per ignorare file temporanei dei notebook
+notebooks/videogames_2016
+notebooks/videogames_2024
