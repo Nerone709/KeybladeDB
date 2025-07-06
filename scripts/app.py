@@ -422,7 +422,21 @@ def get_local_ip():
     finally:
         s.close()
 
+@app.route("/Votazioni/Utenti/Developer", methods=["GET"])
+def user_score_developer():
+    developer = request.args.get("developer")
+    results = []
+    if developer:
+        results = queries.get_avg_user_score_by_developer(db.videogames_2016, developer)
+    return render_template("user_score-developer.html", results=results, searched=developer)
 
+@app.route("/Votazioni/Utenti/Publisher", methods=["GET"])
+def user_score_publisher():
+    developer = request.args.get("publisher")
+    results = []
+    if developer:
+        results = queries.get_avg_user_score_by_publisher(db.videogames_2016, developer)
+    return render_template("user_score-publisher.html", results=results, searched=developer)
 
 
 if __name__ == '__main__':

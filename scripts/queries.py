@@ -703,6 +703,60 @@ def get_all_ratings(collection: Collection):
     """
     return sorted(collection.distinct("Rating"))
 
+def get_avg_user_score_by_developer(collection, developer_name):
+    pipeline = [
+        {
+            "$match": {
+                "User_Score": {"$ne": None},
+                "Developer": {"$regex": developer_name, "$options": "i"}
+            }
+        },
+        {
+            "$group": {
+                "_id": "$Developer",
+                "avg_User_Score": {"$avg": "$User_Score"}
+            }
+        },
+        {
+            "$sort": {"avg_User_Score": -1}
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "Developer": "$_id",
+                "avg_User_Score": 1
+            }
+        }
+    ]
+    return list(collection.aggregate(pipeline))
+
+def get_avg_user_score_by_publisher(collection: Collection, publisher_name):
+    pipeline = [
+        {
+            "$match": {
+                "User_Score": {"$ne": None},
+                "Publisher": {"$regex": publisher_name, "$options": "i"} # Use regex for partial matching and case-insensitivity
+            }
+        },
+        {
+            "$group": {
+                "_id": "$Publisher",
+                "avg_User_Score": {"$avg": "$User_Score"}
+            }
+        },
+        {
+            "$sort": {"avg_User_Score": -1}
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "Publisher": "$_id",
+                "avg_User_Score": 1
+            }
+        }
+    ]
+    return list(collection.aggregate(pipeline))
+
 
 def get_all_developer2024(collection: Collection):
     """
@@ -720,6 +774,7 @@ def get_all_developer2016(collection: Collection):
     :return: A sorted list of unique ratings.
     """
     return sorted(collection.distinct("Developer"))
+
 
 
 def get_all_genres(collection: Collection):

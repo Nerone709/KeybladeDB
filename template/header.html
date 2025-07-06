@@ -19,14 +19,27 @@
             </ul>
           </li>
           <li class="nav-item"><a class="nav-link" href="/pubblicazioni">Pubblicazioni</a></li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="VotazioniDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Votazioni</a>
-            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="venditeDropdown">
-              <li><a class="dropdown-item" href="#">Margine Miglioramento</a></li>
-              <li><a class="dropdown-item" href="#">Utenti</a></li>
-              <li><a class="dropdown-item" href="#">Critici</a></li>
-            </ul>
-          </li>
+             <li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" id="VotazioniDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Votazioni</a>
+  <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="VotazioniDropdown">
+    <li><a class="dropdown-item" href="#">Margine Miglioramento</a></li>
+
+    <!-- UTENTI CON SOTTOMENU -->
+    <li class="dropdown-submenu nav-item">
+      <a class="dropdown-item" href="#" id="utentiToggle">Utenti</a>
+      <ul class="dropdown-menu dropdown-menu-dark" id="utentiSubmenu" style="display: none;">
+        <li><a class="dropdown-item" href="Votazioni/Utenti/Developer">Developer</a></li>
+        <li><a class="dropdown-item" href="Votazioni/Utenti/Publisher">Publisher</a></li>
+      </ul>
+    </li>
+
+    <li><a class="dropdown-item" href="#">Critici</a></li>
+    <li><a class="dropdown-item" href="#">Numero totale votazioni</a></li>
+  </ul>
+</li>
+
+
+
           <li class="nav-item"><a class="nav-link" href="/genere">Genere</a></li>
           <li class="nav-item"><a class="nav-link" href="/rating">Rating</a></li>
           <li class="nav-item"><a class="nav-link" href="/sviluppatore">Sviluppatore</a></li>
@@ -35,3 +48,24 @@
     </div>
   </div>
 </header>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const utentiToggle = document.getElementById("utentiToggle");
+    const utentiSubmenu = document.getElementById("utentiSubmenu");
+
+    utentiToggle.addEventListener("click", function (event) {
+      event.preventDefault(); // previene il comportamento del link
+      utentiSubmenu.style.display = utentiSubmenu.style.display === "none" ? "block" : "none";
+    });
+
+    // Chiudi sottomenù se clicchi altrove
+    document.addEventListener("click", function (e) {
+      if (!utentiToggle.contains(e.target) && !utentiSubmenu.contains(e.target)) {
+        utentiSubmenu.style.display = "none";
+      }
+    });
+  });
+</script>
+
