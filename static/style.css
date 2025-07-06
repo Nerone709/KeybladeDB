@@ -37,6 +37,14 @@ body::after {
     width: auto;
 }
 
+.result-box {
+    background-color: rgba(255, 255, 255, 0.1); /* Bianco semi-trasparente */
+    backdrop-filter: blur(5px); /* Effetto vetro opaco */
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 
 
 /* ===== STRUTTURA BASE ===== */

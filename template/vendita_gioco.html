@@ -79,18 +79,20 @@
 
 
     {% if result %}
-    <div class="row mt-5">
-        <div class="col-md-5">
-            <h4 class="text-info mb-4">Risultati per: <strong>{{ result.title }}</strong></h4>
-            <p class="text-info mb-4" ><strong>Vendita maggiore:</strong> {{ result.max_region }} ({{ result.max_value }} milioni)</p>
-            <p class="text-info mb-4"><strong>Vendita minore:</strong> {{ result.min_region }} ({{ result.min_value }} milioni)</p>
-        </div>
-        <div class="col-md-7 text-center">
-            <h4 class="text-info mb-4">Grafico di <strong>{{ result.title }}</strong></h4>
-            <canvas id="salesChart"></canvas>
-
+    <div class="result-box p-4 mt-5">
+        <div class="row">
+            <div class="col-md-5">
+                <h4 class="text-info mb-4">Risultati per: <strong class="text-black">{{ result.title }}</strong></h4>
+                <p class="text-info mb-4"><strong>Vendita maggiore:</strong> {{ result.max_region }} ({{ result.max_value }} milioni)</p>
+                <p class="text-info mb-4"><strong>Vendita minore:</strong> {{ result.min_region }} ({{ result.min_value }} milioni)</p>
+            </div>
+            <div class="col-md-7 text-center">
+                <h4 class="text-info mb-4">Grafico di <strong class="text-black">{{ result.title }}</strong></h4>
+                <canvas id="salesChart"></canvas>
+            </div>
         </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
