@@ -31,6 +31,54 @@ def get_videogames_by_rating(rating, collection: Collection):
     ]
     return collection.aggregate(pipeline)
 
+def get_sales_by_developer2016_by_region(collection: Collection, developers, region):
+    """
+    Retrieve total sales for a specific developer in a specific region.
+    :param collection: The MongoDB collection for the year 2016.
+    :param developers: Name of the developer to filter by (e.g. 'Nintendo').
+    :param region: The region to filter by (e.g. 'NA_Sales', 'JP_Sales', 'EU_Sales', 'Other_Sales').
+    :return: A list of dictionaries containing the name, developer, platform, and sales in the specified region of the video games.
+    """
+    if isinstance(developers, str):
+        developers = [developers]
+    pipeline = [
+        {"$match": {"Developer": {"$in": developers}}},
+        {"$project": {
+            "_id": 0,
+            "Name": 1,
+            "Developer": 1,
+            "Platform": 1,
+            "Sales": f"${region}"  # Use the specified region field
+        }},
+        {"$sort": {region: -1}},  # Sort by the specified region in descending order
+    ]
+
+    return collection.aggregate(pipeline)
+
+
+def get_sales_by_developer2024_by_region(collection: Collection, developers, region):
+    """
+    Retrieve total sales for a specific developer in a specific region.
+    :param collection: The MongoDB collection for the year 2024.
+    :param developers: Name of the developer to filter by (e.g. 'Nintendo').
+    :param region: The region to filter by (e.g. 'na_sales', 'jp_sales', 'pal_sales', 'other_sales').
+    :return: A list of dictionaries containing the title, developer, console, and sales in the specified region of the video games.
+    """
+    if isinstance(developers, str):
+        developers = [developers]
+    pipeline = [
+        {"$match": {"developer": {"$in": developers}}},
+        {"$project": {
+            "_id": 0,
+            "title": 1,
+            "developer": 1,
+            "console": 1,
+            "sales": f"${region}"  # Use the specified region field
+        }},
+        {"$sort": {region: -1}},  # Sort by the specified region in descending order
+    ]
+
+    return collection.aggregate(pipeline)
 
 def get_sales_by_developer2024(collection: Collection, developers):
     """"

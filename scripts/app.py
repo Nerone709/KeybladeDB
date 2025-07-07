@@ -171,7 +171,6 @@ def aggiungi_gioco():
 
     return render_template("aggiungi.html")
 
-
 @app.route('/modifica/<id>', methods=['GET', 'POST'])
 def modifica_gioco(id):
     gioco_id = id
@@ -301,7 +300,7 @@ def rating_page():
 
 from flask import request, jsonify, render_template
 
-@app.route('/sviluppatore', methods=['GET', 'POST'])
+@app.route('/vendite/developer', methods=['GET', 'POST'])
 def developer_page():
     # Se è richiesta autocomplete via GET con ?autocomplete=1&q=...
     if request.args.get('autocomplete') == '1':
@@ -341,6 +340,37 @@ def developer_page():
         results=results
     )
 
+@app.route('/vendite/regionali', methods=['GET', 'POST'])
+def regional_sales():
+    selected_dataset = None
+    input_region = None
+    developer = None
+    results = []
+
+    if request.method == 'POST':
+        selected_dataset = request.form.get('selected_dataset')
+        input_region = request.form.get('input_region')
+        developer = request.form.get('developer_name')
+
+        print(developer)
+        print(input_region)
+        print(selected_dataset)
+
+        if selected_dataset and input_region:
+            if selected_dataset == '2016':
+                results = list(queries.get_sales_by_developer2016_by_region(videogames2016, developer, input_region))
+            elif selected_dataset == '2024':
+                results = list(queries.get_sales_by_developer2024_by_region(videogames2024, developer, input_region))
+
+    for result in results:
+        print(result)
+    return render_template(
+        'vendita_regione.html',
+        selected_dataset=selected_dataset,
+        developer_name=developer,
+        input_region=input_region,
+        results=results
+    )
 
 from flask import request, render_template
 
