@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Media Critic Score per Sviluppatore</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .suggestion-box {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #2c3034;
+            border: 1px solid #495057;
+            border-top: none;
+            z-index: 1000;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .suggestion-box .list-group-item {
+            cursor: pointer;
+            background-color: #2c3034;
+            color: #e9ecef;
+            border: none;
+        }
+
+        .suggestion-box .list-group-item:hover,
+        .suggestion-box .list-group-item:focus {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        @media (max-width: 576px) {
+            .suggestion-box {
+                width: 100% !important;
+                max-height: 150px;
+                border-radius: 0 0 0.25rem 0.25rem;
+            }
+            table th, table td {
+                white-space: nowrap;
+                font-size: 0.4em;
+                padding: 0.2rem;
+            }
+        }
+
+        #dev-input-wrapper {
+            position: relative;
+        }
+    </style>
+</head>
+
+<body class="bg-dark text-light">
+
+    {% include 'header.html' %}
+
+    <div class="container py-5">
+        <h1 class="mb-4 text-center">Media Critic Score per Sviluppatore</h1>
+
+        <form method="POST" action="/Votazioni/Critici/Developer">
+            <div id="dev-input-wrapper" class="input-group">
+                <input type="text" name="developer" id="developer-input" class="form-control" placeholder="Inserisci il nome del developer" value="{{ developer or '' }}" required>
+                <button type="submit" class="btn btn-primary">Cerca</button>
+            </div>
+        </form>
+
+            {% if mean_score %}
+            <div class="alert alert-success mt-4 text-center">
+                <h4>Developer: {{ developer }}</h4>
+                <p>Media Critic Score: <strong>{{ mean_score }}</strong> / 10</p>
+
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6">
+                        <canvas id="criticChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                const score = {{ mean_score }};
+                const ctx = document.getElementById('criticChart').getContext('2d');
+
+                const data = {
+                    labels: ['{{ developer }}'],
+                    datasets: [{
+                        label: 'Media Critic Score',
+                        data: [0],
+                        backgroundColor: ['rgba(13, 110, 253, 0.7)'],
+                        borderColor: ['rgba(13, 110, 253, 1)'],
+                        borderWidth: 1
+                    }]
+                };
+
+                const config = {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutCubic',
+                        },
+                           scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 10,
+                                    min: 0,
+                                    ticks: {
+                                        stepSize: 1,
+                                        autoSkip: false,
+                                        maxTicksLimit: 11
+                                    }
+                                }
+                            },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                };
+
+                const criticChart = new Chart(ctx, config);
+
+                let current = 0;
+                const step = score / 50;
+                const interval = setInterval(() => {
+                    if (current >= score) {
+                        criticChart.data.datasets[0].data[0] = score;
+                        criticChart.update();
+                        clearInterval(interval);
+                    } else {
+                        criticChart.data.datasets[0].data[0] = current.toFixed(2);
+                        criticChart.update();
+                        current += step;
+                    }
+                }, 30);
+            </script>
+        {% elif developer %}
+            <div class="alert alert-warning mt-4">
+                Nessun risultato trovato per "<strong>{{ developer }}</strong>"
+            </div>
+        {% endif %}
+    </div>
+
+    {% include 'footer.html' %}
+
+    <script>
+        const devInput = document.getElementById('developer-input');
+        const wrapper = document.getElementById('dev-input-wrapper');
+        const suggestionBox = document.createElement('div');
+        suggestionBox.classList.add('list-group', 'suggestion-box');
+        wrapper.appendChild(suggestionBox);
+
+        if (devInput) {
+            devInput.addEventListener('input', function () {
+                const val = this.value;
+                suggestionBox.innerHTML = '';
+
+                let terms = val.split(',');
+                let lastTerm = terms[terms.length - 1].trim();
+
+                if (!lastTerm) {
+                    suggestionBox.style.display = 'none';
+                    return;
+                }
+
+                suggestionBox.style.display = 'block';
+
+                fetch(`/sviluppatore?autocomplete=1&q=${encodeURIComponent(lastTerm)}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                        return res.json();
+                    })
+                    .then(suggestions => {
+                        if (suggestions.length === 0) {
+                            suggestionBox.style.display = 'none';
+                            return;
+                        }
+                        suggestions.forEach(dev => {
+                            const item = document.createElement('button');
+                            item.type = 'button';
+                            item.className = 'list-group-item list-group-item-action';
+                            item.textContent = dev;
+                            item.addEventListener('click', () => {
+                                terms[terms.length - 1] = dev;
+                                devInput.value = terms.join(', ') + (val.endsWith(',') ? ', ' : '');
+                                suggestionBox.innerHTML = '';
+                                suggestionBox.style.display = 'none';
+                                devInput.focus();
+                            });
+                            suggestionBox.appendChild(item);
+                        });
+                    })
+                    .catch(err => {
+                        console.error('Errore fetching suggerimenti:', err);
+                        suggestionBox.style.display = 'none';
+                    });
+            });
+        }
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#developer-input') && !e.target.closest('.suggestion-box')) {
+                suggestionBox.innerHTML = '';
+                suggestionBox.style.display = 'none';
+            }
+        });
+
+        if (devInput) {
+            devInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (!suggestionBox.contains(document.activeElement)) {
+                        suggestionBox.innerHTML = '';
+                        suggestionBox.style.display = 'none';
+                    }
+                }, 100);
+            });
+        }
+    </script>
+
+</body>
+</html>

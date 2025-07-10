@@ -60,7 +60,14 @@
                             </ul>
                         </li>
 
-                        <li><a class="dropdown-item" href="#">Critici</a></li>
+                      <li class="dropdown-submenu">
+                            <a class="dropdown-item dropdown-toggle" href="#" id="criticiToggle">Critici</a>
+                            <ul class="dropdown-menu dropdown-menu-dark" id="criticiSubmenu" style="display: none;">
+                                <li><a class="dropdown-item" href="{{ url_for('critic_score_developer') }}">Developer</a></li>
+                            </ul>
+                      </li>
+
+
 
                         <li class="dropdown-submenu">
                             <a class="dropdown-item dropdown-toggle" href="#" id="totaleVotazioniToggle">Numero totale
@@ -97,6 +104,10 @@
         const utentiSubmenu = document.getElementById("utentiSubmenu");
         const totaleVotazioniToggle = document.getElementById("totaleVotazioniToggle");
         const totaleVotazioniSubmenu = document.getElementById("totaleVotazioniSubmenu");
+
+        // ELEMENTI "Critici"
+        const criticiToggle = document.getElementById("criticiToggle");
+        const criticiSubmenu = document.getElementById("criticiSubmenu");
 
         // ------------------ VENDITE ------------------
         if (globaliToggle) {
@@ -136,11 +147,21 @@
             });
         }
 
-        // Close all submenus when clicking outside
+
+        if (criticiToggle) {
+            criticiToggle.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation(); // <-- Previene chiusura Bootstrap
+                criticiSubmenu.style.display = criticiSubmenu.style.display === "block" ? "none" : "block";
+            });
+        }
+
+
         document.addEventListener("click", function (event) {
             const targets = [
                 globaleSubmenu, regionaleSubmenu,
-                utentiSubmenu, totaleVotazioniSubmenu
+                utentiSubmenu, totaleVotazioniSubmenu,
+                criticiSubmenu
             ];
             targets.forEach(submenu => {
                 if (submenu) submenu.style.display = "none";
@@ -148,6 +169,7 @@
         });
     });
 </script>
+
 
 
 <style>

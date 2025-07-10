@@ -877,6 +877,76 @@ def get_all_developer2024(collection: Collection):
     return sorted(collection.distinct("developer"))
 
 
+def get_avg_critic_score_for_developer(developer_name, dataset_2016, dataset_2024):
+    """
+    Calculate average critic score for a developer across both datasets.
+    :param developer_name: Name of the developer
+    :param dataset_2016: MongoDB collection for 2016 data
+    :param dataset_2024: MongoDB collection for 2024 data
+    :return: Dictionary with developer name and average critic score
+    """
+
+    # Query 2016 dataset
+    pipeline_2016 = [
+        {
+            "$match": {
+                "Developer": {"$regex": f"^{developer_name}$", "$options": "i"},
+                "Critic_Score": {"$ne": None, "$exists": True}
+            }
+        },
+        {
+            "$project": {
+                "Developer": 1,
+                "Critic_Score": 1
+            }
+        }
+    ]
+
+    # Query 2024 dataset
+    pipeline_2024 = [
+        {
+            "$match": {
+                "developer": {"$regex": f"^{developer_name}$", "$options": "i"},
+                "critic_score": {"$ne": None, "$exists": True}
+            }
+        },
+        {
+            "$project": {
+                "developer": 1,
+                "critic_score": 1
+            }
+        }
+    ]
+
+    # Get results from both collections
+    results_2016 = list(dataset_2016.aggregate(pipeline_2016))
+    results_2024 = list(dataset_2024.aggregate(pipeline_2024))
+
+    # Calculate totals
+    total_score = 0
+    count = 0
+
+    # Process 2016 results (scores are out of 100, need to normalize to 10)
+    for game in results_2016:
+        score = game.get("Critic_Score")
+        if score is not None and isinstance(score, (int, float)) and score > 0:
+            total_score += score / 10  # Normalize to 10-point scale
+            count += 1
+
+    # Process 2024 results (scores are already out of 10)
+    for game in results_2024:
+        score = game.get("critic_score")
+        if score is not None and isinstance(score, (int, float)) and score > 0:
+            total_score += score
+            count += 1
+
+    if count == 0:
+        return {"Developer": developer_name, "avg_Critic_Score": None}
+
+    avg_score = round(total_score / count, 2)
+    return {"Developer": developer_name, "avg_Critic_Score": avg_score}
+
+
 def get_all_developer2016(collection: Collection):
     """
     Retrieve the list of unique ratings from the MongoDB collection.

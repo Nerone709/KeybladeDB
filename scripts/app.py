@@ -479,6 +479,19 @@ def critic_count_publisher():
     return render_template("critic_count-publisher.html", results=results)
 
 
+@app.route("/Votazioni/Critici/Developer", methods=["GET", "POST"])
+def critic_score_developer():
+    mean_score = None
+    developer_name = None
+
+    if request.method == "POST":
+        developer_name = request.form["developer"]
+        result = queries.get_avg_critic_score_for_developer(developer_name, videogames2016, videogames2024)
+        mean_score = result["avg_Critic_Score"]
+
+    return render_template("critic_score-developer.html", mean_score=mean_score, developer=developer_name)
+
+
 if __name__ == '__main__':
     local_ip = get_local_ip()
     print(f"App disponibile su: http://{local_ip}:5000")
