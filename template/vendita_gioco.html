@@ -72,63 +72,51 @@
     </form>
 
 
-    {% if result %}
-    <div class="result-box p-4 mt-5">
-        <div class="row">
-            <div class="col-md-5">
-                <h4 class="text-info mb-4">Risultati per: <strong class="text-black">{{ result.title }}</strong></h4>
-                <p class="text-info mb-4"><strong>Vendita maggiore:</strong> {{ result.max_region }} ({{
-                    result.max_value }} milioni)</p>
-                <p class="text-info mb-4"><strong>Vendita minore:</strong> {{ result.min_region }} ({{ result.min_value
-                    }} milioni)</p>
-            </div>
-            <div class="col-md-7 text-center">
-                <h4 class="text-info mb-4">Grafico di <strong class="text-black">{{ result.title }}</strong></h4>
-                <canvas id="salesChart"></canvas>
-            </div>
+    {% if result and sales_labels and sales_values %}
+<div class="result-box p-4 mt-5">
+    <div class="row">
+        <div class="col-md-5">
+            <h4 class="text-info mb-4">Risultati per: <strong class="text-black">{{ result.title }}</strong></h4>
+            <p class="text-info mb-4"><strong>Vendita maggiore:</strong> {{ result.max_region }} ({{ result.max_value }} milioni)</p>
+            <p class="text-info mb-4"><strong>Vendita minore:</strong> {{ result.min_region }} ({{ result.min_value }} milioni)</p>
+        </div>
+        <div class="col-md-7 text-center">
+            <h4 class="text-info mb-4">Grafico di <strong class="text-black">{{ result.title }}</strong></h4>
+            <canvas id="salesChart"></canvas>
         </div>
     </div>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = {{ sales_labels | tojson }};
+    const data = {{ sales_values | tojson }};
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const labels = {
-        {
-            sales_labels | tojson
-        }
-        }
-        ;
-        const data = {
-        {
-            sales_values | tojson
-        }
-        }
-        ;
-
-        const ctx = document.getElementById('salesChart').getContext('2d');
-        const salesChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Vendite per regione',
-                    data: data,
-                    backgroundColor: [
-                        '#4e79a7', '#f28e2b', '#e15759', '#76b7b2'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Vendite per regione',
+                data: data,
+                backgroundColor: [
+                    '#4e79a7', '#f28e2b', '#e15759', '#76b7b2'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom'
                 }
             }
-        });
-    </script>
-    {% endif %}
+        }
+    });
+</script>
+{% endif %}
+
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -137,12 +125,8 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const allTitles = {
-        {
-            all_titles | tojson
-        }
-    }
-        ;
+       const allTitles = {{ all_titles | tojson }};
+
         const input = document.getElementById('titleInput');
         const suggestions = document.getElementById('suggestions');
 

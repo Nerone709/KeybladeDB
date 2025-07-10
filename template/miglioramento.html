@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <title>Margine di Miglioramento</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <!-- Bootstrap + Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+        }
+
+        .result-box {
+            background-color: #1e1e1e;
+            border-radius: 15px;
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .result-box h5 {
+            color: #5cc7ec;
+        }
+
+        .highlight {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .margine-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .margine-valore {
+            font-size: 2rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .margine-img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            /* Per un effetto centrato verticalmente */
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 576px) {
+            .margine-container {
+                justify-content: center;
+                gap: 10px;
+            }
+            .margine-valore {
+                font-size: 1.5rem;
+            }
+            .margine-img {
+                width: 100px;
+                height: 100px;
+            }
+            main.container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    {% include 'header.html' %}
+
+    <main class="container my-5" style="padding-bottom: 200px;">
+        <h2 class="text-center mb-4" style="color: #5cc7ec;">Analizza il Margine di Miglioramento</h2>
+
+        <!-- Barra di ricerca -->
+        <form method="POST" action="{{ url_for('miglioramento') }}" class="row justify-content-center mb-4">
+            <div class="col-12 col-sm-8 col-md-5 mb-2">
+                <input
+                    type="text"
+                    name="gioco"
+                    class="form-control"
+                    placeholder="Nome del videogioco"
+                    value="{{ gioco_ricercato or '' }}"
+                    required
+                />
+            </div>
+            <div class="col-12 col-sm-4 col-md-2 mb-2">
+                <button type="submit" class="btn btn-warning w-100">Cerca</button>
+            </div>
+        </form>
+
+        <!-- Messaggio di errore -->
+        {% if error %}
+        <div class="alert alert-danger text-center">{{ error }}</div>
+        {% endif %}
+
+        <!-- Risultati -->
+        {% if risultati %}
+        <p class="text-center text-success" style="color: #5cc7ec;">
+            Trovati {{ risultati|length }} risultati per <strong>{{ gioco_ricercato }}</strong>
+        </p>
+
+        <div class="row gy-4">
+            {% for r in risultati %}
+            <div class="col-12 col-md-6 d-flex">
+                <div class="result-box shadow flex-fill">
+                    <h5>{{ r.gioco }} ({{ r.Platform }})</h5>
+                    <p>
+                        <strong>Punteggio 2016:</strong>
+                        <span class="highlight">{{ r.Critic_Score }}</span>
+                    </p>
+                    <p>
+                        <strong>Punteggio 2024:</strong>
+                        <span class="highlight">{{ r.critic_score_2024_norm }}</span>
+                    </p>
+                    <p><strong>Margine di Miglioramento:</strong></p>
+                    <div class="margine-container">
+                        {% if r.margine_miglioramento|float > 0 %}
+                        <span class="margine-valore text-success">{{ r.margine_miglioramento }}%</span>
+                        <img
+                            src="{{ url_for('static', filename='assets/freccia_verde.jpg') }}"
+                            alt="Margine positivo"
+                            class="margine-img"
+                        />
+                        {% elif r.margine_miglioramento|float < 0 %}
+                        <span class="margine-valore text-danger">{{ r.margine_miglioramento }}%</span>
+                        <img
+                            src="{{ url_for('static', filename='assets/freccia_rossa.jpg') }}"
+                            alt="Margine negativo"
+                            class="margine-img"
+                        />
+                        {% else %}
+                        <span class="margine-valore text-secondary">{{ r.margine_miglioramento }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% elif gioco_ricercato and not error %}
+        <div class="alert alert-warning text-center">
+            Nessun risultato trovato per <strong>{{ gioco_ricercato }}</strong>.
+        </div>
+        {% endif %}
+    </main>
+
+    {% include 'footer.html' %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

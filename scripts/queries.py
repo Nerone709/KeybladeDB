@@ -57,13 +57,6 @@ def get_sales_by_developer2016_by_region(collection: Collection, developers, reg
 
 
 def get_sales_by_developer2024_by_region(collection: Collection, developers, region):
-    """
-    Retrieve total sales for a specific developer in a specific region.
-    :param collection: The MongoDB collection for the year 2024.
-    :param developers: Name of the developer to filter by (e.g. 'Nintendo').
-    :param region: The region to filter by (e.g. 'na_sales', 'jp_sales', 'pal_sales', 'other_sales').
-    :return: A list of dictionaries containing the title, developer, console, and sales in the specified region of the video games.
-    """
     if isinstance(developers, str):
         developers = [developers]
     pipeline = [
@@ -73,12 +66,13 @@ def get_sales_by_developer2024_by_region(collection: Collection, developers, reg
             "title": 1,
             "developer": 1,
             "console": 1,
-            "sales": f"${region}"  # Use the specified region field
+            "sales": f"${region}"
         }},
-        {"$sort": {region: -1}},  # Sort by the specified region in descending order
+        {"$sort": {region: -1}},
     ]
 
     return collection.aggregate(pipeline)
+
 
 def get_sales_by_developer2024(collection: Collection, developers):
     """"
@@ -718,7 +712,7 @@ def add_game(collection: Collection, game_data):
     """
     result = collection.insert_one(game_data)
     print(f"Gioco aggiunto con ID: {result.inserted_id}")
-    return result
+    return str(result.inserted_id)
 
 
 def delete_game(collection: Collection, id):
@@ -777,6 +771,89 @@ def get_avg_user_score_by_developer(collection, developer_name):
         }
     ]
     return list(collection.aggregate(pipeline))
+
+
+
+
+def get_margine_miglioramento_game(collection: Collection, gioco: str):
+    """
+    Calcola il margine di miglioramento tra giochi del 2016 e del 2024.
+    Richiede obbligatoriamente il nome di un gioco per effettuare il filtro.
+
+    :param collection: Collezione MongoDB videogames_2016
+    :param gioco: Nome del gioco da cercare (obbligatorio, case-insensitive, match parziale)
+    :return: Lista di risultati
+    """
+    if not gioco or not gioco.strip():
+        raise ValueError("È necessario fornire un nome di gioco valido.")
+
+    gioco = gioco.strip().lower()
+
+    pipeline = [
+        # Normalizza nome 2016
+        {"$addFields": {
+            "name_clean": {"$toLower": {"$trim": {"input": "$Name"}}}
+        }},
+        # Filtro per nome e punteggio valido
+        {"$match": {
+            "Critic_Score": {"$ne": None, "$ne": 0},
+            "name_clean": {"$regex": gioco, "$options": "i"}
+        }},
+        # Join con 2024
+        {"$lookup": {
+            "from": "videogames_2024",
+            "let": {"name_clean_2016": "$name_clean", "platform_2016": "$Platform"},
+            "pipeline": [
+                {"$addFields": {
+                    "name_clean": {"$toLower": {"$trim": {"input": "$title"}}}
+                }},
+                {"$match": {
+                    "$expr": {
+                        "$and": [
+                            {"$ne": ["$critic_score", None]},
+                            {"$ne": ["$critic_score", 0]},
+                            {"$eq": ["$name_clean", "$$name_clean_2016"]},
+                            {"$eq": ["$console", "$$platform_2016"]}
+                        ]
+                    }
+                }}
+            ],
+            "as": "matched_2024"
+        }},
+        {"$unwind": "$matched_2024"},
+        # Calcola margine
+        {"$addFields": {
+            "critic_score_2024_norm": {
+                "$multiply": [{"$toDouble": "$matched_2024.critic_score"}, 10]
+            }
+        }},
+        {"$addFields": {
+            "margine_miglioramento": {
+                "$subtract": ["$critic_score_2024_norm","$Critic_Score"]
+            },
+            "gioco": "$Name"
+        }},
+        # Seleziona solo i campi utili
+        {"$project": {
+            "_id": 0,
+            "gioco": 1,
+            "Platform": 1,
+            "Critic_Score": 1,
+            "critic_score_2024_norm": 1,
+            "margine_miglioramento": 1
+        }},
+        # Rimuove duplicati per gioco + piattaforma
+        {"$group": {
+            "_id": {"gioco": "$gioco", "Platform": "$Platform"},
+            "doc": {"$first": "$$ROOT"}
+        }},
+        {"$replaceRoot": {"newRoot": "$doc"}},
+        # Ordina per margine
+        {"$sort": {"margine_miglioramento": -1}}
+    ]
+
+    return list(collection.aggregate(pipeline))
+
 
 def get_avg_user_score_by_publisher(collection: Collection, publisher_name):
     pipeline = [
@@ -875,6 +952,8 @@ def get_all_developer2024(collection: Collection):
     :return: A sorted list of unique ratings.
     """
     return sorted(collection.distinct("developer"))
+
+
 
 
 def get_avg_critic_score_for_developer(developer_name, dataset_2016, dataset_2024):

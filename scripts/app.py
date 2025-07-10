@@ -1,13 +1,14 @@
 import uuid
 from datetime import datetime
 from bson import ObjectId, errors
-from bson.errors import InvalidId
 from flask import Flask, render_template, request, Response, jsonify, redirect, url_for
 import os
 import pymongo
 import json
 from pygments.lexer import combined
 import socket
+from bson import ObjectId
+
 
 import queries
 
@@ -81,12 +82,10 @@ def mostra_tutti_i_giochi():
         else:
             return jsonify({"success": False, "error": "Collezione non valida"}), 400
 
-        try:
-            object_id = ObjectId(id)
-        except:
+        if not isinstance(id, str) or not id.strip():
             return jsonify({"success": False, "error": "ID non valido"}), 400
 
-        success = queries.delete_game(collection, object_id)
+        success = queries.delete_game(collection, id)
         return jsonify({"success": success})
 
     # Metodo GET
@@ -131,7 +130,7 @@ def aggiungi_gioco():
         # Prepara i dati in base alla collezione
         if collezione == "2016":
             game_data = {
-                "_id": str(uuid.uuid4()),
+                "_id": str(ObjectId()),
                 "Name": titolo,
                 "Platform": console,
                 "Genre": genere,
@@ -148,7 +147,7 @@ def aggiungi_gioco():
             collection = videogames2016
         elif collezione == "2024":
             game_data = {
-                "_id": str(uuid.uuid4()),
+                "_id": str(ObjectId()),
                 "title": titolo,
                 "console": console,
                 "genre": genere,
@@ -166,7 +165,8 @@ def aggiungi_gioco():
         else:
             return "Collezione non valida", 400
 
-        queries.add_game(collection, game_data)
+        game_id = queries.add_game(collection, game_data)
+        print(f"Gioco aggiunto con ID: {game_id}")
         return redirect(url_for('mostra_tutti_i_giochi'))
 
     return render_template("aggiungi.html")
@@ -174,6 +174,7 @@ def aggiungi_gioco():
 @app.route('/modifica/<id>', methods=['GET', 'POST'])
 def modifica_gioco(id):
     gioco_id = id
+    print(f"Gioco da modificare con ID: {gioco_id}")
     if request.method == 'POST':
         collezione = request.form.get('collezione')
         sales_type = request.form.get('sales_type')  # sales element chosen
@@ -340,6 +341,8 @@ def developer_page():
         results=results
     )
 
+
+
 @app.route('/vendite/regionali', methods=['GET', 'POST'])
 def regional_sales():
     selected_dataset = None
@@ -352,18 +355,14 @@ def regional_sales():
         input_region = request.form.get('input_region')
         developer = request.form.get('developer_name')
 
-        print(developer)
-        print(input_region)
-        print(selected_dataset)
-
         if selected_dataset and input_region:
             if selected_dataset == '2016':
-                results = list(queries.get_sales_by_developer2016_by_region(videogames2016, developer, input_region))
+                raw_results = queries.get_sales_by_developer2016_by_region(videogames2016, developer, input_region)
+                results = list(raw_results)
             elif selected_dataset == '2024':
-                results = list(queries.get_sales_by_developer2024_by_region(videogames2024, developer, input_region))
-
-    for result in results:
-        print(result)
+                raw_results = queries.get_sales_by_developer2024_by_region(videogames2024, developer, input_region)
+                results = list(raw_results)
+    print(results)
     return render_template(
         'vendita_regione.html',
         selected_dataset=selected_dataset,
@@ -371,6 +370,7 @@ def regional_sales():
         input_region=input_region,
         results=results
     )
+
 
 from flask import request, render_template
 
@@ -490,6 +490,23 @@ def critic_score_developer():
         mean_score = result["avg_Critic_Score"]
 
     return render_template("critic_score-developer.html", mean_score=mean_score, developer=developer_name)
+
+
+
+
+
+@app.route("/miglioramento", methods=["GET", "POST"])
+def miglioramento():
+    if request.method == "POST":
+        gioco = request.form.get("gioco")
+        if not gioco or not gioco.strip():
+            return render_template("miglioramento.html", error="Inserisci un nome di gioco.")
+        try:
+            risultati = queries.get_margine_miglioramento_game(videogames2016, gioco)
+            return render_template("miglioramento.html", risultati=risultati, gioco_ricercato=gioco)
+        except Exception as e:
+            return render_template("miglioramento.html", error=str(e))
+    return render_template("miglioramento.html")
 
 
 if __name__ == '__main__':

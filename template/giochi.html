@@ -51,10 +51,10 @@
                 </td>
                 <td>
                     <button class="btn btn-sm btn-danger elimina-btn"
-                            data-id="{{ game._id }}"
-                            data-collezione="{{ game.anno }}">
-                        Elimina
-                    </button>
+        data-id="{{ game._id | string }}"
+        data-collezione="{{ game.anno }}">
+    Elimina
+</button>
                 </td>
             </tr>
             {% endfor %}
@@ -194,6 +194,7 @@
     caricaAltroBtn.addEventListener('click', () => {
         caricaAltriGiochi();
     });
+    assegnaEventiElimina();
 
 
 
