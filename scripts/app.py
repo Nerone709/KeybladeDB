@@ -452,21 +452,61 @@ def get_local_ip():
     finally:
         s.close()
 
+
+from flask import jsonify
+
+
 @app.route("/Votazioni/Utenti/Developer", methods=["GET"])
 def user_score_developer():
     developer = request.args.get("developer")
+    autocomplete = request.args.get("autocomplete")
+    q = request.args.get("q", "").lower()
+
+    if autocomplete == "1":
+        # Converti la collection in lista di dict (documenti)
+        games_list = list(videogames2016.find())
+
+        matching_devs = set()
+        for game in games_list:
+            dev_name = game.get('Developer', '').lower()
+            if q in dev_name:
+                matching_devs.add(game.get('Developer', ''))
+
+        suggestions = sorted(matching_devs)[:10]
+        return jsonify(suggestions)
+
     results = []
     if developer:
         results = queries.get_avg_user_score_by_developer(videogames2016, developer)
+
     return render_template("user_score-developer.html", results=results, searched=developer)
 
 @app.route("/Votazioni/Utenti/Publisher", methods=["GET"])
 def user_score_publisher():
-    developer = request.args.get("publisher")
+    autocomplete = request.args.get("autocomplete")
+    q = request.args.get("q", "").lower()
+    publisher = request.args.get("publisher")
+
+    if autocomplete == "1":
+        try:
+            all_games = list(videogames2016.find({}, {"Publisher": 1}))
+        except Exception as e:
+            return jsonify([])
+
+        matching = set()
+        for game in all_games:
+            pub = game.get("Publisher", "")
+            if isinstance(pub, str) and q in pub.lower():
+                matching.add(pub)
+
+        return jsonify(sorted(matching)[:10])
+
     results = []
-    if developer:
-        results = queries.get_avg_user_score_by_publisher(videogames2016, developer)
-    return render_template("user_score-publisher.html", results=results, searched=developer)
+    if publisher:
+        results = queries.get_avg_user_score_by_publisher(videogames2016, publisher)
+
+    return render_template("user_score-publisher.html", results=results, searched=publisher)
+
 
 @app.route("/Votazioni/Numero_totale_votazioni/Developer", methods=["GET"])
 def critic_count_developer():
@@ -481,22 +521,61 @@ def critic_count_publisher():
 
 @app.route("/Votazioni/Critici/Developer", methods=["GET", "POST"])
 def critic_score_developer():
+    # Autocomplete (via GET)
+    if request.method == "GET" and request.args.get("autocomplete") == "1":
+        q = request.args.get("q", "").lower()
+        matching = set()
+
+        try:
+            all_games = list(videogames2016.find({}, {"Developer": 1}))
+            for game in all_games:
+                dev = game.get("Developer", "")
+                if isinstance(dev, str) and q in dev.lower():
+                    matching.add(dev)
+        except Exception as e:
+            return jsonify([])
+
+        return jsonify(sorted(matching)[:10])
+
+    # Form handling (via POST)
     mean_score = None
     developer_name = None
 
     if request.method == "POST":
-        developer_name = request.form["developer"]
-        result = queries.get_avg_critic_score_for_developer(developer_name, videogames2016, videogames2024)
-        mean_score = result["avg_Critic_Score"]
+        developer_name = request.form.get("developer")
+        if developer_name:
+            result = queries.get_avg_critic_score_for_developer(developer_name, videogames2016, videogames2024)
+            mean_score = result["avg_Critic_Score"]
 
     return render_template("critic_score-developer.html", mean_score=mean_score, developer=developer_name)
 
 
 
-
+from flask import request, jsonify, render_template
+import re
 
 @app.route("/miglioramento", methods=["GET", "POST"])
 def miglioramento():
+    # Se è richiesta AJAX per autocomplete
+    if request.method == "GET" and request.args.get("term"):
+        term = request.args.get("term").strip()
+        if not term:
+            return jsonify([])
+
+        try:
+            # Query MongoDB case-insensitive con regex
+            regex = re.compile(f".*{re.escape(term)}.*", re.IGNORECASE)
+            risultati = videogames2016.find(
+                {"Name": regex},
+                {"_id": 0, "Name": 1}
+            ).limit(10)
+
+            titoli = [r["Name"] for r in risultati]
+            return jsonify(titoli)
+        except Exception as e:
+            return jsonify([]), 500
+
+    # Normale POST per analisi miglioramento
     if request.method == "POST":
         gioco = request.form.get("gioco")
         if not gioco or not gioco.strip():
@@ -506,6 +585,8 @@ def miglioramento():
             return render_template("miglioramento.html", risultati=risultati, gioco_ricercato=gioco)
         except Exception as e:
             return render_template("miglioramento.html", error=str(e))
+
+    # Render iniziale
     return render_template("miglioramento.html")
 
 
