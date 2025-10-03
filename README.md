@@ -65,4 +65,4 @@ We decided to implement different functionalities for a better user experience, 
 The project was created, designed and published by: </br>
 [Chiara Puglia](https://github.com/chiarapuglia99): Master's Degree Student in Computer Science, Data Science and Machine Learning </br>
 [Giuseppe Napolitano](https://github.com/Nerone709): Master's Degree Student in Computer Science, Software Engineering and IT Management </br>
-[Luca Giuliano](https://github.com/Kizorat) (Bergor): Master's Degree Student in Computer Science, Data Science and Machine Learning </br>
+[Luca Giuliano](https://github.com/Kizorat): Master's Degree Student in Computer Science, Data Science and Machine Learning </br>
